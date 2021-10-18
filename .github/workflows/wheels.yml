@@ -13,10 +13,9 @@ jobs:
         with:
           python-version: 3.9
       - name: install numpy
-
+        run: pip install numpy
       - name: Build Wheels
         uses: messense/maturin-action@v1
-        run: pip install numpy
           maturin-version: latest
           manylinux: auto
           command: build
