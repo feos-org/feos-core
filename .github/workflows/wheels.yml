@@ -25,7 +25,7 @@ jobs:
           maturin-version: latest
           manylinux: auto
           command: build
-          args: --release --out dist --no-sdist --cargo-extra-args="--features python openblas-static"
+          args: --release --out dist --no-sdist --cargo-extra-args="--features python --features openblas-static"
       - name: Upload wheels
         uses: actions/upload-artifact@v2
         with:
