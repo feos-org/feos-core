@@ -14,6 +14,11 @@ jobs:
           python-version: 3.9
       - name: install numpy
         run: pip install numpy
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
       - name: Build Wheels
         uses: messense/maturin-action@v1
         with:
