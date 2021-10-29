@@ -1,19 +1,15 @@
 use crate::cubic::{PengRobinson, PengRobinsonParameters, PengRobinsonRecord};
 use crate::joback::JobackRecord;
-use crate::parameter::{IdentifierOption, Parameter, ParameterError, PureRecord, SegmentRecord};
+use crate::parameter::{IdentifierOption, Parameter, ParameterError, PureRecord};
 use crate::python::joback::PyJobackRecord;
-use crate::python::parameter::{
-    PyBinaryRecord, PyBinarySegmentRecord, PyChemicalRecord, PyIdentifier,
-};
+use crate::python::parameter::{PyBinaryRecord, PyChemicalRecord, PyIdentifier};
 use crate::python::{PyContributions, PyVerbosity};
-use crate::utils::{DataSet, EquilibriumLiquidDensity, Estimator, LiquidDensity, VaporPressure};
 use crate::*;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use quantity::python::*;
-use quantity::si::*;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::rc::Rc;
@@ -87,7 +83,7 @@ impl_vle_state!(PengRobinson, PyPengRobinson);
 // impl_estimator!(PengRobinson, PyPengRobinson);
 
 #[pymodule]
-pub fn cubic(py: Python<'_>, m: &PyModule) -> PyResult<()> {
+pub fn cubic(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
     m.add_class::<PyVerbosity>()?;
     m.add_class::<PyContributions>()?;

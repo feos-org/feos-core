@@ -309,7 +309,7 @@ macro_rules! impl_state {
             /// ----------
             /// contributions: Contributions, optional
             ///     the contributions of the helmholtz energy.
-            ///     Defaults to `Contributions.Total`.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -339,7 +339,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -355,7 +356,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -371,7 +373,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -387,7 +390,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -403,7 +407,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -419,7 +424,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -435,7 +441,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -471,7 +478,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -487,7 +495,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -553,7 +562,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -569,7 +579,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -585,7 +596,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -601,7 +613,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -617,7 +630,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -633,7 +647,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -650,7 +665,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -666,7 +682,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -682,7 +699,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -699,7 +717,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -715,7 +734,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -731,7 +751,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -761,7 +782,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -777,7 +799,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -794,7 +817,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -810,7 +834,8 @@ macro_rules! impl_state {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -980,7 +1005,8 @@ macro_rules! impl_state_molarweight {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -996,7 +1022,8 @@ macro_rules! impl_state_molarweight {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -1012,7 +1039,8 @@ macro_rules! impl_state_molarweight {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -1028,7 +1056,8 @@ macro_rules! impl_state_molarweight {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
@@ -1044,7 +1073,8 @@ macro_rules! impl_state_molarweight {
             /// Parameters
             /// ----------
             /// contributions: Contributions, optional
-            ///     the contributions of the helmholtz energy
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
             ///
             /// Returns
             /// -------
