@@ -14,10 +14,10 @@ mod statehd;
 mod user_defined;
 mod utils;
 
-use cubic::*;
-use joback::*;
-use parameter::*;
-use user_defined::*;
+pub use cubic::PyInit_cubic;
+use joback::PyJobackRecord;
+use parameter::{PyChemicalRecord, PyIdentifier};
+pub use user_defined::PyInit_user_defined;
 
 /// Helmholtz energy contributions to consider
 /// when computing a property.
