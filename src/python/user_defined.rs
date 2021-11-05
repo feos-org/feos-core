@@ -15,8 +15,23 @@ use std::collections::HashMap;
 use std::fmt;
 use std::rc::Rc;
 
+/// Equation of state implemented as python class.
+///
+/// Parameters
+/// ----------
+/// obj : python class object
+///     The class that implements the equation of state.
+///
+/// Returns
+/// -------
+/// UserDefinedEos
+///
+/// Raises
+/// ------
+/// RunTimeError : if the class does not implement all necessary methods.
 #[pyclass(name = "UserDefinedEos", unsendable)]
 #[derive(Clone)]
+#[pyo3(text_signature = "(obj)")]
 pub struct PyUserDefinedEos(Rc<PyEoSObj>);
 
 #[pymethods]
@@ -41,10 +56,10 @@ impl PyEoSObj {
             if !attr {
                 panic!("Python Class has to have a method 'components' with signature:\n\tdef signature(self) -> int")
             }
-            // let attr = obj.as_ref(py).hasattr("identifier")?;
-            // if !attr {
-            //     panic!("Python Class has to have a method 'identifier' with signature:\n\tdef identifier(self) -> str")
-            // }
+            let attr = obj.as_ref(py).hasattr("subset")?;
+            if !attr {
+                panic!("Python Class has to have a method 'subset' with signature:\n\tdef subset(self, component_list: List[int]) -> Self")
+            }
             let attr = obj.as_ref(py).hasattr("molar_weight")?;
             if !attr {
                 panic!("Python Class has to have a method 'molar_weight' with signature:\n\tdef molar_weight(self) -> SIArray1\nwhere the size of the returned array has to be 'components'.")
