@@ -221,8 +221,8 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
             } else {
                 // update state
                 vle = Self([
-                    State::new_pure(eos, t_new, rho_l)?,
                     State::new_pure(eos, t_new, rho_v)?,
+                    State::new_pure(eos, t_new, rho_l)?,
                 ]);
             }
 
