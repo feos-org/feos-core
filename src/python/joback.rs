@@ -9,20 +9,20 @@ use pyo3::prelude::*;
 /// The fourth order coefficient `e` is not present in the
 /// orginial publication by Joback and Reid but is required
 /// for correlations for some pure components that are modeled
-/// using the samen polynomial approach.
+/// using the same polynomial approach.
 ///
 /// Parameters
 /// ----------
 /// a : float
-///     zeroth order coefficint
+///     zeroth order coefficient
 /// b : float
-///     first order coefficint
+///     first order coefficient
 /// c : float
-///     second order coefficint
+///     second order coefficient
 /// d : float
-///     third order coefficint
+///     third order coefficient
 /// e : float
-///     fourth order coefficint
+///     fourth order coefficient
 ///
 /// Returns
 /// -------

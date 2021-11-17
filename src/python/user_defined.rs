@@ -28,7 +28,8 @@ use std::rc::Rc;
 ///
 /// Raises
 /// ------
-/// RunTimeError : if the class does not implement all necessary methods.
+/// RunTimeError
+///     If the class does not implement all necessary methods.
 #[pyclass(name = "UserDefinedEos", unsendable)]
 #[derive(Clone)]
 #[pyo3(text_signature = "(obj)")]
