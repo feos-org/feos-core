@@ -5,10 +5,6 @@ authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>",
            "Philipp Rehner <rehner@itt.uni-stuttgart.de"]
 edition = "2018"
 
-[lib]
-name = "feos_core"
-crate-type = ["rlib", "cdylib"]
-
 [dependencies]
 quantity = { version = "0.3", features = ["linalg"] }
 approx = "0.4"
@@ -24,11 +20,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 indexmap = "1.7"
 numpy = { version = "0.14", optional = true }
-
-[dependencies.pyo3]
-version = "0.14"
-features = ["extension-module", "abi3", "abi3-py36"]
-optional = true
+pyo3 = { version = "0.14", optional = true }
 
 [features]
 default = []

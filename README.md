@@ -14,3 +14,11 @@ Add this to your `Cargo.toml`
 [dependencies]
 feos-core = "0.1.0"
 ```
+
+## Test building python wheel
+
+From within a Python virtual environment with `maturin` installed, type
+
+```
+maturin build --release --out dist --no-sdist -m build_wheel/Cargo.toml
+```
