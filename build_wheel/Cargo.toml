@@ -1,5 +1,5 @@
 [package]
-name = "build_wheel"
+name = "feos_core"
 version = "0.1.0"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>",
            "Philipp Rehner <rehner@itt.uni-stuttgart.de"]
