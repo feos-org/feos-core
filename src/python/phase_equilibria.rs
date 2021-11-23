@@ -183,14 +183,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, liquid_molefracs, pressure=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn bubble_point_tx(
@@ -248,14 +240,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, pressure, liquid_molefracs, temperature=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn bubble_point_px(
@@ -313,14 +297,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, vapor_molefracs, pressure=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn dew_point_tx(
@@ -378,14 +354,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, pressure, vapor_molefracs, temperature=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn dew_point_px(
@@ -708,13 +676,7 @@ macro_rules! impl_vle_state {
             /// ------
             /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
-            ///
-            ///     Add examples.
-            #[pyo3(text_signature = "(initial_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
+            #[pyo3(text_signature = "($self, initial_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
             pub fn tp_flash(
                 &self,
                 init_vle_state: Option<&PyPhaseEquilibrium>,
