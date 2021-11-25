@@ -268,7 +268,7 @@ mod tests {
         let tc = propane.model_record.clone().unwrap().tc;
         let pc = propane.model_record.clone().unwrap().pc;
         let parameters =
-            PengRobinsonParameters::from_records(vec![propane.clone()], vec![vec![0.0]]);
+            PengRobinsonParameters::from_records(vec![propane.clone()], Array2::zeros((1, 1)));
         let pr = Rc::new(PengRobinson::new(parameters));
         let cp = State::critical_point(&pr, None, None, VLEOptions::default())?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));

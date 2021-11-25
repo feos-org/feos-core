@@ -306,23 +306,18 @@ mod test {
         a: f64,
     }
 
-    #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-    struct MyBinaryModel {
-        a: f64,
-    }
-
     struct MyParameter {
         pure_records: Vec<PureRecord<MyPureModel, JobackRecord>>,
-        binary_records: Array2<MyBinaryModel>,
+        binary_records: Array2<f64>,
     }
 
     impl Parameter for MyParameter {
         type Pure = MyPureModel;
         type IdealGas = JobackRecord;
-        type Binary = MyBinaryModel;
+        type Binary = f64;
         fn from_records(
             pure_records: Vec<PureRecord<MyPureModel, JobackRecord>>,
-            binary_records: Array2<MyBinaryModel>,
+            binary_records: Array2<f64>,
         ) -> Self {
             Self {
                 pure_records,
@@ -330,12 +325,7 @@ mod test {
             }
         }
 
-        fn records(
-            &self,
-        ) -> (
-            &[PureRecord<MyPureModel, JobackRecord>],
-            &Array2<MyBinaryModel>,
-        ) {
+        fn records(&self) -> (&[PureRecord<MyPureModel, JobackRecord>], &Array2<f64>) {
             (&self.pure_records, &self.binary_records)
         }
     }
@@ -357,7 +347,7 @@ mod test {
         "#;
         let records: Vec<PureRecord<MyPureModel, JobackRecord>> =
             serde_json::from_str(r).expect("Unable to parse json.");
-        let p = MyParameter::from_records(records, vec![]);
+        let p = MyParameter::from_records(records, Array2::zeros((1, 1)));
         assert_eq!(p.pure_records[0].identifier.cas, "123-4-5")
     }
 }
