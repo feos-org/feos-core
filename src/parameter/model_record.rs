@@ -1,6 +1,6 @@
 use super::chemical_record::ChemicalRecord;
 use super::identifier::Identifier;
-use super::ParameterError;
+use super::segment::SegmentRecord;
 use serde::{Deserialize, Serialize};
 
 /// A collection of parameters of a pure substance.
@@ -35,6 +35,30 @@ impl<M, I> PureRecord<M, I> {
             model_record,
             ideal_gas_record,
         }
+    }
+
+    /// Update the `PureRecord` from segment counts.
+    ///
+    /// The [FromSegments] trait needs to be implemented for both the model record
+    /// and the ideal gas record.
+    pub fn update_from_segments<S>(&mut self, segments: S)
+    where
+        M: FromSegments,
+        I: FromSegments,
+        S: IntoIterator<Item = (SegmentRecord<M, I>, f64)>,
+    {
+        self.molarweight = 0.0;
+        let mut model_segments = Vec::new();
+        let mut ideal_gas_segments = Vec::new();
+        for (s, n) in segments {
+            self.molarweight += s.molarweight * n;
+            model_segments.push((s.model_record, n));
+            ideal_gas_segments.push(s.ideal_gas_record.map(|ig| (ig, n)));
+        }
+        self.model_record = Some(M::from_segments(&model_segments));
+
+        let ideal_gas_segments: Option<Vec<_>> = ideal_gas_segments.into_iter().collect();
+        self.ideal_gas_record = ideal_gas_segments.as_deref().map(I::from_segments);
     }
 }
 
@@ -78,15 +102,17 @@ pub type GroupContributionRecord = PureRecord<NoRecord, NoRecord>;
 /// Trait for models that implement a homosegmented group contribution
 /// method
 pub trait FromSegments: Clone {
-    /// Type of the binary interaction parameter(s) used in this model.
-    type Binary;
-
     /// Constructs the record from a list of segment records with their
     /// number of occurences and possibly binary interaction parameters.
-    fn from_segments(
-        segments: &[(Self, f64)],
-        binary_records: Option<&[BinaryRecord<String, Self::Binary>]>,
-    ) -> Result<Self, ParameterError>;
+    fn from_segments(segments: &[(Self, f64)]) -> Self;
+}
+
+/// Trait for models that implement a homosegmented group contribution
+/// method and have a combining rule for binary interaction parameters.
+pub trait FromSegmentsBinary: Clone {
+    /// Constructs the record from a list of segment records with their
+    /// number of occurences and possibly binary interaction parameters.
+    fn from_segments_binary(segments: &[(Self, f64, f64)]) -> Self;
 }
 
 /// A collection of parameters that model interactions between two

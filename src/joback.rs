@@ -46,11 +46,7 @@ impl fmt::Display for JobackRecord {
 /// Implementation of the combining rules as described in
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
 impl FromSegments for JobackRecord {
-    type Binary = ();
-    fn from_segments(
-        segments: &[(Self, f64)],
-        _binary_records: Option<&[BinaryRecord<String, Self::Binary>]>,
-    ) -> Result<Self, ParameterError> {
+    fn from_segments(segments: &[(Self, f64)]) -> Self {
         let mut a = -37.93;
         let mut b = 0.21;
         let mut c = -3.91e-4;
@@ -63,7 +59,7 @@ impl FromSegments for JobackRecord {
             d += s.d * *n;
             e += s.e * *n;
         });
-        Ok(Self { a, b, c, d, e })
+        Self { a, b, c, d, e }
     }
 }
 
@@ -238,7 +234,7 @@ mod tests {
             .iter()
             .map(|(s, &n)| (s.ideal_gas_record.clone().unwrap(), n))
             .collect();
-        let jr = JobackRecord::from_segments(&joback_segments, None).unwrap();
+        let jr = JobackRecord::from_segments(&joback_segments);
         assert_relative_eq!(
             jr.a,
             33.3 * 2.0 - 2.14 * 4.0 - 8.25 * 2.0 - 37.93,

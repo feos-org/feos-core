@@ -1,10 +1,10 @@
 use crate::equation_of_state::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual};
 use crate::joback::JobackRecord;
-use crate::parameter::{BinaryRecord, Identifier, Parameter, ParameterError, PureRecord};
+use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{GRAM, MOL};
 use crate::state::StateHD;
 use crate::MolarWeight;
-use ndarray::{Array, Array1, Array2};
+use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::si::{SIArray1, SIUnit};
 use serde::{Deserialize, Serialize};
@@ -43,17 +43,6 @@ pub struct PengRobinsonParameters {
     molarweight: Array1<f64>,
     pure_records: Vec<PureRecord<PengRobinsonRecord, JobackRecord>>,
     joback_records: Option<Vec<JobackRecord>>,
-    binary_records: Option<Vec<BinaryRecord<Identifier, f64>>>,
-}
-
-impl PengRobinsonParameters {
-    pub fn subset(&self, component_list: &[usize]) -> Self {
-        let pure_records = component_list
-            .iter()
-            .map(|&i| self.pure_records[i].clone())
-            .collect();
-        Self::from_records(pure_records, self.binary_records.clone()).unwrap()
-    }
 }
 
 impl PengRobinsonParameters {
@@ -83,7 +72,10 @@ impl PengRobinsonParameters {
                 PureRecord::new(id, molarweight[i], None, Some(record), None)
             })
             .collect();
-        PengRobinsonParameters::from_records(records, None)
+        Ok(PengRobinsonParameters::from_records(
+            records,
+            Array2::zeros([pc.len(); 2]),
+        ))
     }
 }
 
@@ -94,8 +86,8 @@ impl Parameter for PengRobinsonParameters {
 
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
-        binary_records: Option<Vec<crate::parameter::BinaryRecord<Identifier, Self::Binary>>>,
-    ) -> Result<Self, crate::parameter::ParameterError> {
+        binary_records: Array2<Self::Binary>,
+    ) -> Self {
         let n = pure_records.len();
 
         let mut tc = Array1::zeros(n);
@@ -123,35 +115,30 @@ impl Parameter for PengRobinsonParameters {
             };
         }
 
-        let mut k_ij = Array::zeros([n, n]);
-        match &binary_records {
-            Some(bs) => bs.iter().for_each(|record| {
-                let i = component_index.get(&record.id1);
-                let j = component_index.get(&record.id2);
-                if let (Some(i), Some(j)) = (i, j) {
-                    k_ij[[*i, *j]] = record.model_record;
-                    k_ij[[*j, *i]] = record.model_record
-                }
-            }),
-            None => (),
-        }
-
         let joback_records = pure_records
             .iter()
             .map(|r| r.ideal_gas_record.clone())
             .collect();
 
-        Ok(Self {
+        Self {
             tc,
             a,
             b,
-            k_ij,
+            k_ij: binary_records,
             kappa,
             molarweight,
             pure_records,
             joback_records,
-            binary_records,
-        })
+        }
+    }
+
+    fn records(
+        &self,
+    ) -> (
+        &[PureRecord<PengRobinsonRecord, JobackRecord>],
+        &Array2<f64>,
+    ) {
+        (&self.pure_records, &self.k_ij)
     }
 }
 
@@ -280,8 +267,8 @@ mod tests {
         let propane = mixture[0].clone();
         let tc = propane.model_record.clone().unwrap().tc;
         let pc = propane.model_record.clone().unwrap().pc;
-        let parameters = PengRobinsonParameters::from_records(vec![propane.clone()], None)
-            .expect("Error reading parameters!");
+        let parameters =
+            PengRobinsonParameters::from_records(vec![propane.clone()], vec![vec![0.0]]);
         let pr = Rc::new(PengRobinson::new(parameters));
         let cp = State::critical_point(&pr, None, None, VLEOptions::default())?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
