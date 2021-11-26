@@ -41,6 +41,28 @@ where
         binary_records: Array2<Self::Binary>,
     ) -> Self;
 
+    /// Creates parameters for a pure component from a pure record.
+    fn new_pure(pure_record: PureRecord<Self::Pure, Self::IdealGas>) -> Self {
+        let binary_record = Array2::from_elem([1, 1], Self::Binary::default());
+        Self::from_records(vec![pure_record], binary_record)
+    }
+
+    /// Creates parameters for a binary system from pure records and an optional
+    /// binary interaction parameter.
+    fn new_binary(
+        pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        binary_record: Option<Self::Binary>,
+    ) -> Self {
+        let binary_record = Array2::from_shape_fn([2, 2], |(i, j)| {
+            if i == j {
+                Self::Binary::default()
+            } else {
+                binary_record.clone().unwrap_or_default()
+            }
+        });
+        Self::from_records(pure_records, binary_record)
+    }
+
     /// Return the original pure and binary records that werde used to construct the parameters.
     #[allow(clippy::type_complexity)]
     fn records(

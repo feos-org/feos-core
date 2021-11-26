@@ -524,18 +524,48 @@ macro_rules! impl_parameter {
             /// ----------
             /// pure_records : [PureRecord]
             ///     A list of pure component parameters.
-            /// binary_records : [BinaryRecord], optional
-            ///     A list of binary interaction parameters.
+            /// binary_records : numpy.ndarray[float]
+            ///     A matrix of binary interaction parameters.
             #[staticmethod]
-            #[pyo3(text_signature = "(pure_records, binary_records=None)")]
+            #[pyo3(text_signature = "(pure_records, binary_records)")]
             fn from_records(
                 pure_records: Vec<PyPureRecord>,
-                binary_records: Option<Vec<PyBinaryRecord>>,
-            ) -> Result<Self, ParameterError> {
-                Ok(Self(<$parameter>::from_records(
+                binary_records: &PyArray2<f64>,
+            ) -> Self {
+                Self(<$parameter>::from_records(
                     pure_records.into_iter().map(|pr| pr.0).collect(),
-                    binary_records.map(|br| br.into_iter().map(|br| br.0).collect()),
-                )?))
+                    binary_records.to_owned_array(),
+                ))
+            }
+
+            /// Creates parameters for a pure component from a pure record.
+            ///
+            /// Parameters
+            /// ----------
+            /// pure_record : PureRecord
+            ///     The pure component parameters.
+            #[staticmethod]
+            #[pyo3(text_signature = "(pure_record)")]
+            fn new_pure(pure_record: PyPureRecord) -> Self {
+                Self(<$parameter>::new_pure(pure_record.0))
+            }
+
+            /// Creates parameters for a binary system from pure records and an optional
+            /// binary interaction parameter.
+            ///
+            /// Parameters
+            /// ----------
+            /// pure_records : [PureRecord]
+            ///     A list of pure component parameters.
+            /// binary_record : float, optional
+            ///     The binary interaction parameter.
+            #[staticmethod]
+            #[pyo3(text_signature = "(pure_records, binary_record)")]
+            fn new_binary(pure_records: Vec<PyPureRecord>, binary_record: Option<f64>) -> Self {
+                Self(<$parameter>::new_binary(
+                    pure_records.into_iter().map(|pr| pr.0).collect(),
+                    binary_record,
+                ))
             }
 
             /// Creates parameters from json files.
