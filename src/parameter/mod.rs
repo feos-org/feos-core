@@ -311,8 +311,6 @@ pub enum ParameterError {
     IdentifierNotFound(String),
     #[error("Information missing.")]
     InsufficientInformation,
-    #[error("Building model parameter from homo segments failed: {0}")]
-    HomoGc(String),
     #[error("Incompatible parameters: {0}")]
     IncompatibleParameters(String),
 }
