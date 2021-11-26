@@ -152,7 +152,7 @@ where
     ///
     /// The [FromSegments] trait needs to be implemented for both the model record
     /// and the ideal gas record.
-    fn from_segment_records(
+    fn from_segments(
         mut pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>>,
         binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
@@ -280,7 +280,7 @@ where
             })
             .transpose()?;
 
-        Self::from_segment_records(pure_records, segment_records, binary_records)
+        Self::from_segments(pure_records, segment_records, binary_records)
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {

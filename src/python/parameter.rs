@@ -532,10 +532,10 @@ macro_rules! impl_parameter {
                 pure_records: Vec<PyPureRecord>,
                 binary_records: &PyArray2<f64>,
             ) -> Self {
-                Self(<$parameter>::from_records(
+                Self(Rc::new(<$parameter>::from_records(
                     pure_records.into_iter().map(|pr| pr.0).collect(),
-                    binary_records.to_owned_array(),
-                ))
+                    binary_records.to_owned_array().mapv(f64::into),
+                )))
             }
 
             /// Creates parameters for a pure component from a pure record.
@@ -547,7 +547,7 @@ macro_rules! impl_parameter {
             #[staticmethod]
             #[pyo3(text_signature = "(pure_record)")]
             fn new_pure(pure_record: PyPureRecord) -> Self {
-                Self(<$parameter>::new_pure(pure_record.0))
+                Self(Rc::new(<$parameter>::new_pure(pure_record.0)))
             }
 
             /// Creates parameters for a binary system from pure records and an optional
@@ -562,10 +562,10 @@ macro_rules! impl_parameter {
             #[staticmethod]
             #[pyo3(text_signature = "(pure_records, binary_record)")]
             fn new_binary(pure_records: Vec<PyPureRecord>, binary_record: Option<f64>) -> Self {
-                Self(<$parameter>::new_binary(
+                Self(Rc::new(<$parameter>::new_binary(
                     pure_records.into_iter().map(|pr| pr.0).collect(),
-                    binary_record,
-                ))
+                    binary_record.map(f64::into),
+                )))
             }
 
             /// Creates parameters from json files.
@@ -595,12 +595,12 @@ macro_rules! impl_parameter {
                     Some(o) => IdentifierOption::try_from(o)?,
                     None => IdentifierOption::Name,
                 };
-                Ok(Self(<$parameter>::from_json(
+                Ok(Self(Rc::new(<$parameter>::from_json(
                     &substances,
                     pure_path,
                     binary_path,
                     io,
-                )?))
+                )?)))
             }
         }
     };
@@ -629,11 +629,11 @@ macro_rules! impl_parameter_from_segments {
                 segment_records: Vec<PySegmentRecord>,
                 binary_segment_records: Option<Vec<PyBinarySegmentRecord>>,
             ) -> Result<Self, ParameterError> {
-                Ok(Self(<$parameter>::from_segments(
+                Ok(Self(Rc::new(<$parameter>::from_segments(
                     pure_records.into_iter().map(|pr| pr.0).collect(),
                     segment_records.into_iter().map(|sr| sr.0).collect(),
-                    binary_segment_records.map(|r| r.into_iter().map(|r| r.0).collect()),
-                )?))
+                    binary_segment_records.map(|r| r.into_iter().map(|r| BinaryRecord{id1:r.0.id1,id2:r.0.id2,model_record:r.0.model_record.into()}).collect()),
+                )?)))
             }
 
             /// Creates parameters using segments from json file.
@@ -666,13 +666,13 @@ macro_rules! impl_parameter_from_segments {
                     Some(o) => IdentifierOption::try_from(o)?,
                     None => IdentifierOption::Name,
                 };
-                Ok(Self(<$parameter>::from_json_segments(
+                Ok(Self(Rc::new(<$parameter>::from_json_segments(
                     &substances,
                     pure_path,
                     segments_path,
                     binary_path,
                     io,
-                )?))
+                )?)))
             }
         }
     };

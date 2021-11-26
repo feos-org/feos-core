@@ -10,6 +10,7 @@ use quantity::si::{SIArray1, SIUnit};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::f64::consts::SQRT_2;
+use std::rc::Rc;
 
 const KB_A3: f64 = 13806490.0;
 
@@ -33,7 +34,6 @@ impl std::fmt::Display for PengRobinsonRecord {
 }
 
 /// Peng-Robinson parameters for one ore more substances.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct PengRobinsonParameters {
     tc: Array1<f64>,
     a: Array1<f64>,
@@ -143,11 +143,11 @@ impl Parameter for PengRobinsonParameters {
 }
 
 pub struct PengRobinson {
-    parameters: PengRobinsonParameters,
+    parameters: Rc<PengRobinsonParameters>,
 }
 
 impl PengRobinson {
-    pub fn new(parameters: PengRobinsonParameters) -> Self {
+    pub fn new(parameters: Rc<PengRobinsonParameters>) -> Self {
         Self { parameters }
     }
 }
@@ -158,7 +158,7 @@ impl EquationOfState for PengRobinson {
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(self.parameters.subset(component_list))
+        Self::new(Rc::new(self.parameters.subset(component_list)))
     }
 
     fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
@@ -269,7 +269,7 @@ mod tests {
         let pc = propane.model_record.clone().unwrap().pc;
         let parameters =
             PengRobinsonParameters::from_records(vec![propane.clone()], Array2::zeros((1, 1)));
-        let pr = Rc::new(PengRobinson::new(parameters));
+        let pr = Rc::new(PengRobinson::new(Rc::new(parameters)));
         let cp = State::critical_point(&pr, None, None, VLEOptions::default())?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
         assert_relative_eq!(cp.temperature, tc * KELVIN, max_relative = 1e-4);
