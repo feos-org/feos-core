@@ -33,14 +33,8 @@ macro_rules! impl_vle_state {
             ///
             /// Raises
             /// ------
-            /// RuntimeError :
+            /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
-            ///
-            ///     Add examples.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, initial_state=None, max_iter=None, tol=None, verbosity=None)")]
             pub fn pure_t(
@@ -84,14 +78,8 @@ macro_rules! impl_vle_state {
             ///
             /// Raises
             /// ------
-            /// RuntimeError :
+            /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
-            ///
-            ///     Add examples.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, pressure, initial_state=None, max_iter=None, tol=None, verbosity=None)")]
             pub fn pure_p(
@@ -141,14 +129,8 @@ macro_rules! impl_vle_state {
             ///
             /// Raises
             /// ------
-            /// RuntimeError :
+            /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
-            ///
-            ///     Add examples.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, pressure, feed, initial_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
             pub fn tp_flash(
@@ -201,14 +183,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, liquid_molefracs, pressure=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn bubble_point_tx(
@@ -266,14 +240,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, pressure, liquid_molefracs, temperature=None, vapor_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn bubble_point_px(
@@ -331,14 +297,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, vapor_molefracs, pressure=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn dew_point_tx(
@@ -396,14 +354,6 @@ macro_rules! impl_vle_state {
             /// Returns
             /// -------
             /// PhaseEquilibrium
-            ///
-            /// Raises
-            /// ------
-            /// .. todo::
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
             #[staticmethod]
             #[pyo3(text_signature = "(eos, pressure, vapor_molefracs, temperature=None, liquid_molefracs=None, max_iter_inner=None, max_iter_outer=None, tol_inner=None, tol_outer=None, verbosity=None)")]
             pub fn dew_point_px(
@@ -724,15 +674,9 @@ macro_rules! impl_vle_state {
             ///
             /// Raises
             /// ------
-            /// RuntimeError :
+            /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
-            ///
-            /// Example
-            /// -------
-            /// .. todo::
-            ///
-            ///     Add examples.
-            #[pyo3(text_signature = "(initial_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
+            #[pyo3(text_signature = "($self, initial_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
             pub fn tp_flash(
                 &self,
                 init_vle_state: Option<&PyPhaseEquilibrium>,
@@ -761,7 +705,8 @@ macro_rules! impl_vle_state {
         ///     The number of points.
         /// critical_temperature: SINumber, optional
         ///     An estimate for the critical temperature to initialize
-        ///     the calculation if necessary. For most components not necessary
+        ///     the calculation if necessary. For most components not necessary.
+        ///     Defaults to `None`.
         /// max_iter : int, optional
         ///     The maximum number of iterations.
         /// tol: float, optional
@@ -849,19 +794,18 @@ macro_rules! impl_vle_state {
 
             /// Returns the phase diagram as dictionary.
             ///
-            /// Returns
-            /// -------
-            ///     dict[str, list[float]]
-            ///         Keys: property names.
-            ///         Values: property for each state.
-            ///
-            /// Units
-            /// -----
+            /// Note
+            /// ----
             /// temperature : K
             /// pressure : Pa
             /// densities : mol / m³
             /// molar enthalpies : kJ / mol
             /// molar entropies : kJ / mol / K
+            ///
+            /// Returns
+            /// -------
+            /// dict[str, list[float]]
+            ///     Keys: property names. Values: property for each state.
             pub fn to_dict(&self) -> PyResult<HashMap<String, Vec<f64>>> {
                 let mut result = HashMap::with_capacity(8);
                 result.insert(String::from("temperature"), (self.0.temperature() / KELVIN).into_value()?.into_raw_vec());

@@ -434,7 +434,7 @@ macro_rules! impl_segment_record {
         /// model_record : ModelRecord
         ///     The segment model parameters.
         /// ideal_gas_record: IdealGasRecord, optional
-        ///     The seg,ment ideal gas parameters.
+        ///     The segment ideal gas parameters.
         ///
         /// Returns
         /// -------

@@ -25,20 +25,20 @@ macro_rules! impl_state {
         ///     System pressure.
         /// enthalpy : SINumber, optional
         ///     System enthalpy.
-        /// entropy : SInumber, optional
+        /// entropy : SINumber, optional
         ///     System entropy.
         /// density_initialization : {'vapor', 'liquid', SINumber, None}, optional
         ///     Method used to initialize density for density iteration.
         ///     'vapor' and 'liquid' are inferred from the maximum density of the equation of state.
         ///     If no density or keyword is provided, the vapor and liquid phase is tested and, if
-        ///     different, the Pyresult with the lower free energy is returned.
+        ///     different, the result with the lower free energy is returned.
         /// initial_temperature : SINumber, optional
         ///     Initial temperature for temperature iteration. Can improve convergence
         ///     when the state is specified with pressure and entropy or enthalpy.
         ///
         /// Returns
         /// -------
-        /// state at given conditions
+        /// State : state at given conditions
         ///
         /// Raises
         /// ------
@@ -125,7 +125,7 @@ macro_rules! impl_state {
             ///
             /// Returns
             /// -------
-            /// State at critical conditions
+            /// State : tate at critical conditions
             #[staticmethod]
             #[pyo3(text_signature = "(eos, initial_temperature=None, max_iter=None, tol=None, verbosity=None)")]
             fn critical_point_pure(
@@ -160,7 +160,7 @@ macro_rules! impl_state {
             ///
             /// Returns
             /// -------
-            /// State at critical conditions.
+            /// State : State at critical conditions.
             #[staticmethod]
             #[args(initial_temperature = "None")]
             #[pyo3(text_signature = "(eos, moles=None, initial_temperature=None, max_iter=None, tol=None, verbosity=None)")]
@@ -198,7 +198,7 @@ macro_rules! impl_state {
             ///
             /// Returns
             /// -------
-            /// State at critical conditions.
+            /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, max_iter=None, tol=None, verbosity=None)")]
             fn critical_point_binary_t(
@@ -233,7 +233,7 @@ macro_rules! impl_state {
             ///
             /// Returns
             /// -------
-            /// State at critical conditions.
+            /// State : State at critical conditions.
             #[staticmethod]
             #[pyo3(text_signature = "(eos, temperature, max_iter=None, tol=None, verbosity=None)")]
             fn critical_point_binary_p(
@@ -264,7 +264,7 @@ macro_rules! impl_state {
             ///
             /// Returns
             /// -------
-            /// [State]
+            /// State
             #[pyo3(text_signature = "(max_iter=None, tol=None, verbosity=None)")]
             fn stability_analysis(&self,
                 max_iter: Option<usize>,

@@ -15,8 +15,6 @@ mod user_defined;
 mod utils;
 
 pub use cubic::PyInit_cubic;
-use joback::PyJobackRecord;
-use parameter::{PyChemicalRecord, PyIdentifier};
 pub use user_defined::PyInit_user_defined;
 
 /// Helmholtz energy contributions to consider
@@ -102,11 +100,6 @@ impl From<EosError> for PyErr {
 
 #[pymodule]
 pub fn feos_core(py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyIdentifier>()?;
-    m.add_class::<PyVerbosity>()?;
-    m.add_class::<PyContributions>()?;
-    m.add_class::<PyChemicalRecord>()?;
-    m.add_class::<PyJobackRecord>()?;
     m.add_wrapped(wrap_pymodule!(quantity))?;
     m.add_wrapped(wrap_pymodule!(user_defined))?;
     m.add_wrapped(wrap_pymodule!(cubic))?;

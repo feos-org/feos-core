@@ -16,7 +16,7 @@ use std::fmt;
 ///
 /// Contains an additional fourth order polynomial coefficient `e`
 /// which is not used in the original publication but is used in
-/// parametrizations for additional molecules in other publications.
+/// parametrization for additional molecules in other publications.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct JobackRecord {
     a: f64,

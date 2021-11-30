@@ -14,6 +14,8 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::rc::Rc;
 
+
+/// A pure substance parameter for the Peng-Robinson equation of state.
 #[pyclass(name = "PengRobinsonRecord", unsendable)]
 #[derive(Clone)]
 pub struct PyPengRobinsonRecord(PengRobinsonRecord);
@@ -40,7 +42,7 @@ impl_pure_record!(
 /// ----------
 /// pure_records : List[PureRecord]
 ///     pure substance records.
-/// binary_records : List[BinarySubstanceRecord], optional
+/// binary_records : List[BinaryRecord], optional
 ///     binary parameter records
 /// substances : List[str], optional
 ///     The substances to use. Filters substances from `pure_records` according to
@@ -48,6 +50,10 @@ impl_pure_record!(
 ///     When not provided, all entries of `pure_records` are used.
 /// search_option : {'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'}, optional, defaults to 'Name'.
 ///     Identifier that is used to search substance.
+///
+/// Returns
+/// -------
+/// PengRobinsonParameters
 #[pyclass(name = "PengRobinsonParameters", unsendable)]
 #[pyo3(
     text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
@@ -59,9 +65,19 @@ impl_parameter!(PengRobinsonParameters, PyPengRobinsonParameters);
 
 /* EQUATION OF STATE */
 
+/// A simple version of the Peng-Robinson equation of state.
+///
+/// Parameters
+/// ----------
+/// parameters : PengRobinsonParameters
+///     The parameters of the Peng-Robinson equation of state to use.
+///
+/// Returns
+/// -------
+/// PengRobinson
 #[pyclass(name = "PengRobinson", unsendable)]
 #[pyo3(
-    text_signature = "(parameters, max_eta, max_iter_cross_assoc, tol_cross_assoc, joback_parameters)"
+    text_signature = "(parameters)"
 )]
 #[derive(Clone)]
 pub struct PyPengRobinson(pub Rc<PengRobinson>);
