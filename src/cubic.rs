@@ -1,5 +1,7 @@
-use crate::equation_of_state::{EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual};
-use crate::joback::JobackRecord;
+use crate::equation_of_state::{
+    EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGasContribution,
+};
+use crate::joback::{Joback, JobackRecord};
 use crate::parameter::{Identifier, Parameter, ParameterError, PureRecord};
 use crate::si::{GRAM, MOL};
 use crate::state::StateHD;
@@ -144,11 +146,19 @@ impl Parameter for PengRobinsonParameters {
 
 pub struct PengRobinson {
     parameters: Rc<PengRobinsonParameters>,
+    ideal_gas: Joback,
 }
 
 impl PengRobinson {
     pub fn new(parameters: Rc<PengRobinsonParameters>) -> Self {
-        Self { parameters }
+        let ideal_gas = parameters.joback_records.as_ref().map_or_else(
+            || Joback::default(parameters.tc.len()),
+            |j| Joback::new(j.clone()),
+        );
+        Self {
+            parameters,
+            ideal_gas,
+        }
     }
 }
 
@@ -203,6 +213,11 @@ impl EquationOfState for PengRobinson {
         dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
     {
         vec![("Peng-Robinson".into(), self.evaluate_residual(state))]
+    }
+
+    fn ideal_gas(&self) -> &dyn IdealGasContribution {
+        &self.ideal_gas
+        // &DefaultIdealGasContribution()
     }
 }
 
