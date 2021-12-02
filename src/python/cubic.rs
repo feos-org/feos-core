@@ -59,7 +59,7 @@ impl_pure_record!(
     text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
 )]
 #[derive(Clone)]
-pub struct PyPengRobinsonParameters(pub PengRobinsonParameters);
+pub struct PyPengRobinsonParameters(pub Rc<PengRobinsonParameters>);
 
 impl_parameter!(PengRobinsonParameters, PyPengRobinsonParameters);
 

@@ -56,6 +56,19 @@ impl ChemicalRecord {
         Ok(counts)
     }
 
+    /// Count the number of occurences of each individual segment identifier in the
+    /// chemical record.
+    ///
+    /// The map contains the segment identifier as key and the count as (float) value.
+    pub fn segment_id_count(&self) -> HashMap<String, f64> {
+        let mut counts = HashMap::with_capacity(self.segments.len());
+        for si in &self.segments {
+            let entry = counts.entry(si.clone()).or_insert(0.0);
+            *entry += 1.0;
+        }
+        counts
+    }
+
     /// Build a HashMap from SegmentRecords for the segments.
     ///
     /// The map contains the segment identifier (String) as key
@@ -79,19 +92,6 @@ impl ChemicalRecord {
             .intersection(&available)
             .map(|s| segments.remove_entry(s).unwrap())
             .collect())
-    }
-
-    /// Compute the molar weight from SegmentRecords
-    pub fn molarweight_from_segments<M: Clone, I: Clone>(
-        &self,
-        segment_records: &[SegmentRecord<M, I>],
-    ) -> Result<f64, ParameterError> {
-        let segment_map = self.segment_map(segment_records)?;
-        Ok(self
-            .segments
-            .iter()
-            .map(|s| segment_map.get(s).unwrap().molarweight)
-            .sum())
     }
 }
 
