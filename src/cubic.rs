@@ -217,7 +217,6 @@ impl EquationOfState for PengRobinson {
 
     fn ideal_gas(&self) -> &dyn IdealGasContribution {
         &self.ideal_gas
-        // &DefaultIdealGasContribution()
     }
 }
 
