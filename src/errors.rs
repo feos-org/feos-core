@@ -1,6 +1,5 @@
 use argmin::core::Error as ArgminError;
-use ndarray_linalg::error::LinalgError;
-use ndarray_stats::errors::MinMaxError;
+use num_dual::linalg::LinAlgError;
 use quantity::QuantityError;
 use thiserror::Error;
 
@@ -26,11 +25,9 @@ pub enum EosError {
     #[error(transparent)]
     QuantityError(#[from] QuantityError),
     #[error(transparent)]
-    LinalgError(#[from] LinalgError),
-    #[error(transparent)]
     ArgminError(#[from] ArgminError),
     #[error(transparent)]
-    MinMaxError(#[from] MinMaxError),
+    LinAlgError(#[from] LinAlgError),
 }
 
 /// Convenience type for `Result<T, EosError>`.

@@ -9,9 +9,6 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-feos-core = { path = "..", features = ["python", "openblas-static"] }
-
-[dependencies.pyo3]
-version = "0.14"
-features = ["extension-module", "abi3", "abi3-py36"]
+feos-core = { path = "..", features = ["python"] }
+pyo3 = { version = "0.14", features = ["extension-module", "abi3", "abi3-py36"] }
 

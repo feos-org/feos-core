@@ -12,7 +12,7 @@ use crate::errors::{EosError, EosResult};
 use crate::EosUnit;
 use cache::Cache;
 use ndarray::prelude::*;
-use ndarray_linalg::Norm;
+use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::cell::RefCell;
@@ -602,14 +602,18 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         for _ in 0..50 {
             let dmu_drho = self.dmu_dni(Contributions::Total) * self.volume;
             let f = self.chemical_potential(Contributions::Total) - chemical_potential;
-            let rho = &self.partial_density - &dmu_drho.solve(&f)?;
+            let dmu_drho_r =
+                dmu_drho.to_reduced(U::reference_molar_energy() / U::reference_density())?;
+            let f_r = f.to_reduced(U::reference_molar_energy())?;
+            let rho = &self.partial_density
+                - &(LU::new(dmu_drho_r)?.solve(&f_r) * U::reference_density());
             *self = State::new_nvt(
                 &self.eos,
                 self.temperature,
                 self.volume,
                 &(rho * self.volume),
             )?;
-            if f.to_reduced(U::reference_molar_energy())?.norm() < 1e-8 {
+            if norm(&f.to_reduced(U::reference_molar_energy())?) < 1e-8 {
                 return Ok(());
             }
         }

@@ -4,9 +4,8 @@ use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::EosUnit;
 use ndarray::*;
-use ndarray_linalg::eigh::EigValsh;
-use ndarray_linalg::solveh::{SolveH, UPLO};
-use ndarray_stats::QuantileExt;
+use num_dual::linalg::smallest_ev;
+use num_dual::linalg::LU;
 use std::f64::EPSILON;
 use std::ops::MulAssign;
 
@@ -192,8 +191,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             adjust_hessian = false;
             hessian = &hesse + &(eta_h * &hesse_ig);
 
-            let eigenvals = hessian.eigvalsh(UPLO::Upper)?;
-            let min_eigenval = *eigenvals.min()?;
+            let (min_eigenval, _) = smallest_ev(hessian.clone());
             if min_eigenval < MIN_EIGENVAL && eta_h < 20.0 {
                 eta_h += 2.0 * ETA_STEP;
                 adjust_hessian = true;
@@ -201,7 +199,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             }
 
             // solve: hessian * delta_y = gradient
-            let delta_y = hessian.solveh(&gradient)?;
+            let delta_y = LU::new(hessian)?.solve(&gradient);
             if delta_y
                 .iter()
                 .zip(y.iter())

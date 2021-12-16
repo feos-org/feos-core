@@ -14,12 +14,10 @@ categories = ["science"]
 exclude = ["/.github/*", "*.ipynb", "/docs"]
 
 [dependencies]
-quantity = { version = "0.3", features = ["linalg"] }
+quantity = { path = "../../quantity" }
 approx = "0.4"
-num-dual = { version = "0.3", features = ["linalg"] }
+num-dual = { path = "../../num-dual", features = ["ndarray"] }
 ndarray = { version = "0.15", features = ["serde"] }
-ndarray-linalg = "0.14"
-ndarray-stats = "0.5"
 num-traits = "0.2"
 thiserror = "1.0"
 argmin = "0.4"
@@ -32,9 +30,3 @@ pyo3 = { version = "0.14", optional = true }
 [features]
 default = []
 python = ["pyo3", "numpy", "quantity/python", "num-dual/python"]
-openblas-system = ["num-dual/openblas-system"]
-openblas-static = ["num-dual/openblas-static"]
-intel-mkl-system = ["num-dual/intel-mkl-system"]
-intel-mkl-static = ["num-dual/intel-mkl-static"]
-netlib-system = ["num-dual/netlib-system"]
-netlib-static = ["num-dual/netlib-static"]
