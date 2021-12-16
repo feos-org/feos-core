@@ -1,15 +1,12 @@
 use crate::python::{statehd::*, PyContributions, PyVerbosity};
 use crate::*;
 use ndarray::prelude::*;
-use num_dual::python::{
-    PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64, PyInit_num_dual,
-};
+use num_dual::python::{PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64};
 use num_dual::{Dual3, Dual3_64, Dual64, HyperDual, HyperDual64};
 use numpy::convert::{IntoPyArray, ToPyArray};
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::wrap_pymodule;
 use quantity::python::{PySIArray1, PySIArray2, PySINumber};
 use std::collections::HashMap;
 use std::fmt;
@@ -201,8 +198,6 @@ impl_vle_state!(PyEoSObj, PyUserDefinedEos);
 
 #[pymodule]
 pub fn user_defined(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pymodule!(num_dual))?;
-
     m.add_class::<PyStateHD>()?;
     m.add_class::<PyStateD>()?;
     m.add_class::<PyStateD3>()?;
