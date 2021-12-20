@@ -7,7 +7,7 @@ use crate::state::{
 };
 use crate::{equation_of_state::EquationOfState, EosUnit};
 use ndarray::*;
-use ndarray_linalg::{Norm, Solve};
+use num_dual::linalg::{norm, LU};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::rc::Rc;
 
@@ -507,7 +507,7 @@ where
 
     // calculate residual
     let res = concatenate![Axis(0), mu_1 - &mu_2, arr1(&[p_1 - p_2])];
-    let error = res.norm();
+    let error = norm(&res);
 
     // calculate Jacobian
     let jacobian = concatenate![
@@ -521,7 +521,7 @@ where
     ];
 
     // calculate Newton step
-    let dx = jacobian.solve_into(res)?;
+    let dx = LU::new(jacobian)?.solve(&res);
 
     // apply Newton step
     let rho_l1 = state1.density - dx[dx.len() - 1] * U::reference_density();
@@ -598,7 +598,7 @@ where
 
     // calculate residual
     let res = concatenate![Axis(0), mu_1 - &mu_2, arr1(&[p_1 - p]), arr1(&[p_2 - p])];
-    let error = res.norm();
+    let error = norm(&res);
 
     // calculate Jacobian
     let jacobian = concatenate![
@@ -622,7 +622,7 @@ where
     ];
 
     // calculate Newton step
-    let dx = jacobian.solve_into(res)?;
+    let dx = LU::new(jacobian)?.solve(&res);
 
     // apply Newton step
     let rho_l1 = state1.density - dx[dx.len() - 2] * U::reference_density();

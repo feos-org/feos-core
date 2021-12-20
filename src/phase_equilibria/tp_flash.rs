@@ -4,7 +4,7 @@ use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
 use crate::EosUnit;
 use ndarray::*;
-use ndarray_linalg::norm::Norm;
+use num_dual::linalg::norm;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::rc::Rc;
 
@@ -259,7 +259,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
             if let Some(nvc) = non_volatile_components.as_ref() {
                 nvc.iter().for_each(|&c| res_vec[c] = 0.0);
             }
-            let res = res_vec.norm_l2();
+            let res = norm(&res_vec);
             log_iter!(
                 verbosity,
                 " {:4} | {:14.8e} | {:.8} | {:.8}",

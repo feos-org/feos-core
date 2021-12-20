@@ -232,7 +232,7 @@ mod tests {
     use crate::phase_equilibria::VLEOptions;
     use crate::state::State;
     use crate::Contributions;
-    use crate::EosResult;
+    use crate::{EosResult, Verbosity};
     use approx::*;
     use quantity::si::*;
     use std::rc::Rc;
@@ -284,7 +284,8 @@ mod tests {
         let parameters =
             PengRobinsonParameters::from_records(vec![propane.clone()], Array2::zeros((1, 1)));
         let pr = Rc::new(PengRobinson::new(Rc::new(parameters)));
-        let cp = State::critical_point(&pr, None, None, VLEOptions::default())?;
+        let options = VLEOptions::new().verbosity(Verbosity::Iter);
+        let cp = State::critical_point(&pr, None, None, options)?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
         assert_relative_eq!(cp.temperature, tc * KELVIN, max_relative = 1e-4);
         assert_relative_eq!(

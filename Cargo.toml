@@ -14,27 +14,19 @@ categories = ["science"]
 exclude = ["/.github/*", "*.ipynb", "/docs"]
 
 [dependencies]
-quantity = { version = "0.3", features = ["linalg"] }
+quantity = "0.4"
 approx = "0.4"
-num-dual = { version = "0.3", features = ["linalg"] }
+num-dual = { version = "0.4", features = ["ndarray"] }
 ndarray = { version = "0.15", features = ["serde"] }
-ndarray-linalg = "0.14"
-ndarray-stats = "0.5"
 num-traits = "0.2"
 thiserror = "1.0"
 argmin = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 indexmap = "1.7"
-numpy = { version = "0.14", optional = true }
-pyo3 = { version = "0.14", optional = true }
+numpy = { version = "0.15", optional = true }
+pyo3 = { version = "0.15", optional = true }
 
 [features]
 default = []
 python = ["pyo3", "numpy", "quantity/python", "num-dual/python"]
-openblas-system = ["num-dual/openblas-system"]
-openblas-static = ["num-dual/openblas-static"]
-intel-mkl-system = ["num-dual/intel-mkl-system"]
-intel-mkl-static = ["num-dual/intel-mkl-static"]
-netlib-system = ["num-dual/netlib-system"]
-netlib-static = ["num-dual/netlib-static"]

@@ -6,9 +6,8 @@ use crate::EosUnit;
 use argmin::prelude::{ArgminOp, Error, Executor};
 use argmin::solver::brent::Brent;
 use ndarray::{arr1, arr2, Array1, Array2};
-use ndarray_linalg::{Norm, UPLO};
-use ndarray_stats::QuantileExt;
-use num_dual::{Dual3, Dual64, DualNum, EighDual, HyperDual, SolveDual};
+use num_dual::linalg::{norm, smallest_ev, LU};
+use num_dual::{Dual3, Dual64, DualNum, HyperDual};
 use num_traits::{One, Zero};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::rc::Rc;
@@ -154,7 +153,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 [res_t[0].eps[0], res_r[0].eps[0]],
                 [res_t[1].eps[0], res_r[1].eps[0]],
             ]);
-            let mut delta = h.solve(&res)?;
+            let mut delta = LU::new(h)?.solve(&res);
 
             // reduce step if necessary
             if delta[0].abs() > 0.25 * t {
@@ -173,13 +172,13 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 verbosity,
                 " {:4} | {:14.8e} | {:13.8} | {:12.8}",
                 i,
-                res.norm(),
+                norm(&res),
                 t * U::reference_temperature(),
                 rho * U::reference_density(),
             );
 
             // check convergence
-            if res.norm() < tol {
+            if norm(&res) < tol {
                 log_result!(
                     verbosity,
                     "Critical point calculation converged in {} step(s)\n",
@@ -215,10 +214,9 @@ pub fn critical_point_objective<E: EquationOfState>(
             + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
             * (moles[i] * moles[j]).sqrt()
     });
-    // dbg!(&qij);
 
     // calculate smallest eigenvalue and corresponding eigenvector of q
-    let (eval, evec) = smallest_ev(qij)?;
+    let (eval, evec) = smallest_ev(qij);
 
     // evaluate third partial derivative w.r.t. s
     let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
@@ -236,12 +234,6 @@ pub fn critical_point_objective<E: EquationOfState>(
     );
     let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
     Ok(arr1(&[eval, res.v3]))
-}
-
-fn smallest_ev(a: Array2<Dual64>) -> EosResult<(Dual64, Array1<Dual64>)> {
-    let (e, vecs) = a.eigh(UPLO::Upper)?;
-    let i_min = e.map(Dual64::re).argmin().unwrap();
-    Ok((e[i_min], vecs.row(i_min).to_owned()))
 }
 
 struct CritOp<U: EosUnit, E: EquationOfState> {

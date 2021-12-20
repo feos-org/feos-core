@@ -5,7 +5,6 @@ use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Cache {
-    pub hash: u64,
     pub map: HashMap<PartialDerivative, f64>,
     pub hit: u64,
     pub miss: u64,
@@ -15,7 +14,6 @@ impl Cache {
     pub fn with_capacity(components: usize) -> Cache {
         let capacity = 6 + 3 * components + components * (components + 1) / 2;
         Cache {
-            hash: 0,
             map: HashMap::with_capacity(capacity),
             hit: 0,
             miss: 0,
@@ -72,8 +70,8 @@ impl Cache {
             self.map
                 .insert(PartialDerivative::First(derivative2), value.eps2[0]);
             self.map
-                .insert(PartialDerivative::Second(d1, d2), value.eps1eps2[(0,0)]);
-            value.eps1eps2[(0,0)]
+                .insert(PartialDerivative::Second(d1, d2), value.eps1eps2[(0, 0)]);
+            value.eps1eps2[(0, 0)]
         }
     }
 

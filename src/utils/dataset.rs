@@ -8,7 +8,6 @@ use crate::state::{Contributions, DensityInitialization, State};
 use crate::utils::estimator::FitError;
 use crate::EosUnit;
 use ndarray::{arr1, Array1};
-use ndarray_stats::QuantileExt;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::collections::HashMap;
 use std::fmt;
@@ -100,11 +99,12 @@ impl<U: EosUnit> VaporPressure<U> {
         std_parameters: Vec<f64>,
     ) -> Result<Self, FitError> {
         let datapoints = target.len();
-        let max_temperature = *temperature
+        let max_temperature = temperature
             .to_reduced(U::reference_temperature())
             .unwrap()
-            .max()
-            .map_err(|_| FitError::IncompatibleInput)?
+            .into_iter()
+            .reduce(|a, b| a.max(b))
+            .unwrap()
             * U::reference_temperature();
         Ok(Self {
             target,
@@ -331,11 +331,12 @@ impl<U: EosUnit> EquilibriumLiquidDensity<U> {
         temperature: QuantityArray1<U>,
     ) -> Result<Self, FitError> {
         let datapoints = target.len();
-        let max_temperature = *temperature
+        let max_temperature = temperature
             .to_reduced(U::reference_temperature())
             .unwrap()
-            .max()
-            .map_err(|_| FitError::IncompatibleInput)?
+            .into_iter()
+            .reduce(|a, b| a.max(b))
+            .unwrap()
             * U::reference_temperature();
         Ok(Self {
             target,

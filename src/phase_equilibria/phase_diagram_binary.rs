@@ -1,10 +1,10 @@
 use super::{PhaseEquilibrium, VLEOptions};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
+use num_dual::linalg::{norm, LU};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
 use crate::EosUnit;
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
-use ndarray_linalg::{Norm, Solve};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::rc::Rc;
 
@@ -609,7 +609,7 @@ where
             ];
 
             // check for convergence
-            if res.norm() < options.tol.unwrap_or(TOL_HETERO) {
+            if norm(&res) < options.tol.unwrap_or(TOL_HETERO) {
                 return Ok(Self([v, l1, l2]));
             }
 
@@ -640,7 +640,7 @@ where
             ];
 
             // calculate Newton step
-            let dx = jacobian.solve_into(res)?;
+            let dx = LU::new(jacobian)?.solve(&res);
 
             // apply Newton step
             let rho_l1 =
@@ -761,7 +761,7 @@ where
             ];
 
             // check for convergence
-            if res.norm() < options.tol.unwrap_or(TOL_HETERO) {
+            if norm(&res) < options.tol.unwrap_or(TOL_HETERO) {
                 return Ok(Self([v, l1, l2]));
             }
 
@@ -803,7 +803,7 @@ where
             ];
 
             // calculate Newton step
-            let dx = jacobian.solve_into(res)?;
+            let dx = LU::new(jacobian)?.solve(&res);
 
             // apply Newton step
             let rho_l1 =
