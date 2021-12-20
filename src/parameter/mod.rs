@@ -74,7 +74,7 @@ where
 
     /// Creates parameters from substance information stored in json files.
     fn from_json<P>(
-        substances: &[&str],
+        substances: Vec<&str>,
         file_pure: P,
         file_binary: Option<P>,
         search_option: IdentifierOption,
@@ -82,24 +82,108 @@ where
     where
         P: AsRef<Path>,
     {
-        let queried: IndexSet<String> = substances
-            .iter()
-            .map(|identifier| identifier.to_string())
-            .collect();
-        let file = File::open(file_pure)?;
-        let reader = BufReader::new(file);
+        Self::from_multiple_json(&[(substances, file_pure)], file_binary, search_option)
+        // let queried: IndexSet<String> = substances
+        //     .iter()
+        //     .map(|identifier| identifier.to_string())
+        //     .collect();
+        // let file = File::open(file_pure)?;
+        // let reader = BufReader::new(file);
 
-        let pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>> =
-            serde_json::from_reader(reader)?;
-        let mut record_map: HashMap<_, _> = pure_records
-            .into_iter()
-            .filter_map(|record| {
-                record
-                    .identifier
-                    .as_string(search_option)
-                    .map(|i| (i, record))
-            })
-            .collect();
+        // let pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>> =
+        //     serde_json::from_reader(reader)?;
+        // let mut record_map: HashMap<_, _> = pure_records
+        //     .into_iter()
+        //     .filter_map(|record| {
+        //         record
+        //             .identifier
+        //             .as_string(search_option)
+        //             .map(|i| (i, record))
+        //     })
+        //     .collect();
+
+        // // Compare queried components and available components
+        // let available: IndexSet<String> = record_map
+        //     .keys()
+        //     .map(|identifier| identifier.to_string())
+        //     .collect();
+        // if !queried.is_subset(&available) {
+        //     let missing: Vec<String> = queried.difference(&available).cloned().collect();
+        //     let msg = format!("{:?}", missing);
+        //     return Err(ParameterError::ComponentsNotFound(msg));
+        // };
+        // let p: Vec<_> = queried
+        //     .iter()
+        //     .filter_map(|identifier| record_map.remove(&identifier.clone()))
+        //     .collect();
+
+        // // Read binary records from file if provided
+        // let binary_map = if let Some(path) = file_binary {
+        //     let file = File::open(path)?;
+        //     let reader = BufReader::new(file);
+        //     let binary_records: Vec<BinaryRecord<Identifier, Self::Binary>> =
+        //         serde_json::from_reader(reader)?;
+        //     binary_records
+        //         .into_iter()
+        //         .filter_map(|br| {
+        //             let id1 = br.id1.as_string(search_option);
+        //             let id2 = br.id2.as_string(search_option);
+        //             id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record)))
+        //         })
+        //         .collect()
+        // } else {
+        //     HashMap::with_capacity(0)
+        // };
+
+        // let n = p.len();
+        // let br = Array2::from_shape_fn([n, n], |(i, j)| {
+        //     let id1 = p[i].identifier.as_string(search_option).unwrap();
+        //     let id2 = p[j].identifier.as_string(search_option).unwrap();
+        //     binary_map
+        //         .get(&(id1.clone(), id2.clone()))
+        //         .or_else(|| binary_map.get(&(id2, id1)))
+        //         .cloned()
+        //         .unwrap_or_default()
+        // });
+
+        // Ok(Self::from_records(p, br))
+    }
+
+    /// Creates parameters from substance information stored in multiple json files.
+    fn from_multiple_json<P>(
+        input: &[(Vec<&str>, P)],
+        file_binary: Option<P>,
+        search_option: IdentifierOption,
+    ) -> Result<Self, ParameterError>
+    where
+        P: AsRef<Path>,
+    {
+        let mut queried: IndexSet<String> = IndexSet::new();
+        let mut record_map: HashMap<String, PureRecord<Self::Pure, Self::IdealGas>> =
+            HashMap::new();
+
+        for (substances, file) in input {
+            substances.iter().for_each(|identifier| {
+                let _ = queried.insert(identifier.to_string());
+            });
+            let f = File::open(file)?;
+            let reader = BufReader::new(f);
+
+            let pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>> =
+                serde_json::from_reader(reader)?;
+
+            pure_records
+                .into_iter()
+                .filter_map(|record| {
+                    record
+                        .identifier
+                        .as_string(search_option)
+                        .map(|i| (i, record))
+                })
+                .for_each(|(i, r)| {
+                    let _ = record_map.insert(i, r);
+                });
+        }
 
         // Compare queried components and available components
         let available: IndexSet<String> = record_map

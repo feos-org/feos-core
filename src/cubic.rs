@@ -69,6 +69,24 @@ pub struct PengRobinsonParameters {
     joback_records: Option<Vec<JobackRecord>>,
 }
 
+impl std::fmt::Display for PengRobinsonParameters {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.pure_records
+            .iter()
+            .zip(self.molarweight.iter())
+            .try_for_each(|(r, mw)| {
+                let cas = r.identifier.cas.clone();
+                let mr = r.model_record.clone().unwrap();
+                writeln!(
+                    f,
+                    "Cas: {}, mw: {} g/mol, tc: {} K, pc: {} Pa, acentric factor: {}",
+                    cas, mw, mr.tc, mr.pc, mr.acentric_factor
+                )
+            })?;
+        writeln!(f, "\nkappa: {}", self.kappa)
+    }
+}
+
 impl PengRobinsonParameters {
     /// Build a simple parameter set without binary interaction parameters.
     pub fn new_simple(

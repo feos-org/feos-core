@@ -14,7 +14,6 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::rc::Rc;
 
-
 /// A pure substance parameter for the Peng-Robinson equation of state.
 #[pyclass(name = "PengRobinsonRecord", unsendable)]
 #[derive(Clone)]
@@ -63,6 +62,13 @@ pub struct PyPengRobinsonParameters(pub Rc<PengRobinsonParameters>);
 
 impl_parameter!(PengRobinsonParameters, PyPengRobinsonParameters);
 
+#[pymethods]
+impl PyPengRobinsonParameters {
+    fn __repr__(&self) -> PyResult<String> {
+        Ok(self.0.to_string())
+    }
+}
+
 /* EQUATION OF STATE */
 
 /// A simple version of the Peng-Robinson equation of state.
@@ -76,9 +82,7 @@ impl_parameter!(PengRobinsonParameters, PyPengRobinsonParameters);
 /// -------
 /// PengRobinson
 #[pyclass(name = "PengRobinson", unsendable)]
-#[pyo3(
-    text_signature = "(parameters)"
-)]
+#[pyo3(text_signature = "(parameters)")]
 #[derive(Clone)]
 pub struct PyPengRobinson(pub Rc<PengRobinson>);
 
