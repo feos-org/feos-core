@@ -99,9 +99,17 @@ where
             HashMap::new();
 
         for (substances, file) in input {
-            substances.iter().for_each(|identifier| {
-                let _ = queried.insert(identifier.to_string());
-            });
+            substances.iter().try_for_each(|identifier| {
+                match queried.insert(identifier.to_string()) {
+                    true => Ok(()),
+                    false => Err(ParameterError::IncompatibleParameters(String::from(
+                        format!(
+                            "tried to add substance '{}' to system but it is already present.",
+                            identifier.to_string()
+                        ),
+                    ))),
+                }
+            })?;
             let f = File::open(file)?;
             let reader = BufReader::new(f);
 
