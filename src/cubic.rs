@@ -1,3 +1,9 @@
+//! Implementation of the Peng-Robinson equation of state.
+//!
+//! This module acts as a reference on how a simple equation
+//! of state - with a single contribution to the Helmholtz energy - can be implemented.
+//! The implementation closely follows the form of the equations given in
+//! [this wikipedia article](https://en.wikipedia.org/wiki/Cubic_equations_of_state#Peng%E2%80%93Robinson_equation_of_state).
 use crate::equation_of_state::{
     EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGasContribution,
 };
@@ -27,6 +33,17 @@ pub struct PengRobinsonRecord {
     acentric_factor: f64,
 }
 
+impl PengRobinsonRecord {
+    /// Create a new pure substance record for the Peng-Robinson equation of state.
+    pub fn new(tc: f64, pc: f64, acentric_factor: f64) -> Self {
+        Self {
+            tc,
+            pc,
+            acentric_factor,
+        }
+    }
+}
+
 impl std::fmt::Display for PengRobinsonRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "PengRobinsonRecord(tc={} K", self.tc)?;
@@ -37,13 +54,18 @@ impl std::fmt::Display for PengRobinsonRecord {
 
 /// Peng-Robinson parameters for one ore more substances.
 pub struct PengRobinsonParameters {
+    /// Critical temperature in Kelvin
     tc: Array1<f64>,
     a: Array1<f64>,
     b: Array1<f64>,
+    /// Binary interaction parameter
     k_ij: Array2<f64>,
     kappa: Array1<f64>,
+    /// Molar weight in units of g/mol
     molarweight: Array1<f64>,
+    /// List of pure component records
     pure_records: Vec<PureRecord<PengRobinsonRecord, JobackRecord>>,
+    /// List of ideal gas Joback records
     joback_records: Option<Vec<JobackRecord>>,
 }
 
@@ -86,6 +108,7 @@ impl Parameter for PengRobinsonParameters {
     type IdealGas = JobackRecord;
     type Binary = f64;
 
+    /// Creates parameters from pure component records.
     fn from_records(
         pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
         binary_records: Array2<Self::Binary>,
@@ -144,12 +167,16 @@ impl Parameter for PengRobinsonParameters {
     }
 }
 
+/// A simple version of the Peng-Robinson equation of state.
 pub struct PengRobinson {
+    /// Parameters
     parameters: Rc<PengRobinsonParameters>,
+    /// Ideal gas contributions to the Helmholtz energy
     ideal_gas: Joback,
 }
 
 impl PengRobinson {
+    /// Create a new equation of state from a set of parameters.
     pub fn new(parameters: Rc<PengRobinsonParameters>) -> Self {
         let ideal_gas = parameters.joback_records.as_ref().map_or_else(
             || Joback::default(parameters.tc.len()),
