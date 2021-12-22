@@ -596,8 +596,38 @@ macro_rules! impl_parameter {
                     None => IdentifierOption::Name,
                 };
                 Ok(Self(Rc::new(<$parameter>::from_json(
-                    &substances,
+                    substances,
                     pure_path,
+                    binary_path,
+                    io,
+                )?)))
+            }
+
+            /// Creates parameters from json files.
+            ///
+            /// Parameters
+            /// ----------
+            /// input : List[Tuple[List[str], str]]
+            ///     The substances to search and their respective parameter files.
+            ///     E.g. [(["methane", "propane"], "parameters/alkanes.json"), (["methanol"], "parameters/alcohols.json")]
+            /// binary_path : str, optional
+            ///     Path to file containing binary substance parameters.
+            /// search_option : str, optional, defaults to "Name"
+            ///     Identifier that is used to search substance.
+            ///     One of 'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'
+            #[staticmethod]
+            #[pyo3(text_signature = "(input, binary_path=None, search_option='Name')")]
+            fn from_multiple_json(
+                input: Vec<(Vec<&str>, &str)>,
+                binary_path: Option<&str>,
+                search_option: Option<&str>,
+            ) -> Result<Self, ParameterError> {
+                let io = match search_option {
+                    Some(o) => IdentifierOption::try_from(o)?,
+                    None => IdentifierOption::Name,
+                };
+                Ok(Self(Rc::new(<$parameter>::from_multiple_json(
+                    &input,
                     binary_path,
                     io,
                 )?)))

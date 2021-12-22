@@ -1,0 +1,18 @@
+[
+    {
+        "identifier": {
+            "cas": "67-56-1",
+            "name": "methanol",
+            "iupac_name": "methanol",
+            "smiles": "CO",
+            "inchi": "InChI=1/CH4O/c1-2/h2H,1H3",
+            "formula": "CH4O"
+        },
+        "model_record": {
+            "tc": 512.60,
+            "pc": 8096000.0,
+            "acentric_factor": 0.559
+        },
+        "molarweight": 32.04
+    }
+]

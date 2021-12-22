@@ -69,6 +69,15 @@ pub struct PengRobinsonParameters {
     joback_records: Option<Vec<JobackRecord>>,
 }
 
+impl std::fmt::Display for PengRobinsonParameters {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.pure_records
+            .iter()
+            .try_for_each(|pr| writeln!(f, "{}", pr.to_string()))?;
+        writeln!(f, "\nk_ij:\n{}", self.k_ij)
+    }
+}
+
 impl PengRobinsonParameters {
     /// Build a simple parameter set without binary interaction parameters.
     pub fn new_simple(

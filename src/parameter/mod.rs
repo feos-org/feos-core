@@ -74,7 +74,7 @@ where
 
     /// Creates parameters from substance information stored in json files.
     fn from_json<P>(
-        substances: &[&str],
+        substances: Vec<&str>,
         file_pure: P,
         file_binary: Option<P>,
         search_option: IdentifierOption,
@@ -82,24 +82,52 @@ where
     where
         P: AsRef<Path>,
     {
-        let queried: IndexSet<String> = substances
-            .iter()
-            .map(|identifier| identifier.to_string())
-            .collect();
-        let file = File::open(file_pure)?;
-        let reader = BufReader::new(file);
+        Self::from_multiple_json(&[(substances, file_pure)], file_binary, search_option)
+    }
 
-        let pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>> =
-            serde_json::from_reader(reader)?;
-        let mut record_map: HashMap<_, _> = pure_records
-            .into_iter()
-            .filter_map(|record| {
-                record
-                    .identifier
-                    .as_string(search_option)
-                    .map(|i| (i, record))
-            })
-            .collect();
+    /// Creates parameters from substance information stored in multiple json files.
+    fn from_multiple_json<P>(
+        input: &[(Vec<&str>, P)],
+        file_binary: Option<P>,
+        search_option: IdentifierOption,
+    ) -> Result<Self, ParameterError>
+    where
+        P: AsRef<Path>,
+    {
+        let mut queried: IndexSet<String> = IndexSet::new();
+        let mut record_map: HashMap<String, PureRecord<Self::Pure, Self::IdealGas>> =
+            HashMap::new();
+
+        for (substances, file) in input {
+            substances.iter().try_for_each(|identifier| {
+                match queried.insert(identifier.to_string()) {
+                    true => Ok(()),
+                    false => Err(ParameterError::IncompatibleParameters(String::from(
+                        format!(
+                            "tried to add substance '{}' to system but it is already present.",
+                            identifier.to_string()
+                        ),
+                    ))),
+                }
+            })?;
+            let f = File::open(file)?;
+            let reader = BufReader::new(f);
+
+            let pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>> =
+                serde_json::from_reader(reader)?;
+
+            pure_records
+                .into_iter()
+                .filter_map(|record| {
+                    record
+                        .identifier
+                        .as_string(search_option)
+                        .map(|i| (i, record))
+                })
+                .for_each(|(i, r)| {
+                    let _ = record_map.insert(i, r);
+                });
+        }
 
         // Compare queried components and available components
         let available: IndexSet<String> = record_map

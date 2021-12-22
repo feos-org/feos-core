@@ -108,7 +108,6 @@ pub fn feos_core(py: Python<'_>, m: &PyModule) -> PyResult<()> {
 import sys
 sys.modules['feos_core.si'] = quantity
 sys.modules['feos_core.user_defined'] = user_defined
-sys.modules['feos_core.user_defined.num_dual'] = user_defined.num_dual
 sys.modules['feos_core.cubic'] = cubic
     ",
         None,
