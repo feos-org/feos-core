@@ -1,6 +1,6 @@
 [package]
 name = "feos-core"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Gernot Bauer <bauer@itt.uni-stuttgart.de>",
            "Philipp Rehner <prehner@ethz.ch"]
 edition = "2018"
@@ -12,6 +12,9 @@ repository = "https://github.com/feos-org/feos-core"
 keywords = ["physics", "thermodynamics", "equations_of_state", "phase_equilibria"]
 categories = ["science"]
 exclude = ["/.github/*", "*.ipynb", "/docs"]
+
+[package.metadata.docs.rs]
+rustdoc-args = [ "--html-in-header", "./docs-header.html" ]
 
 [dependencies]
 quantity = "0.4"
