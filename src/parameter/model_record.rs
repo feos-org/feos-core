@@ -95,7 +95,7 @@ impl std::fmt::Display for NoRecord {
     }
 }
 
-/// Convenience type for models in which molecules are purely describes
+/// Convenience type for models in which molecules are purely described
 /// by their chemical record.
 pub type GroupContributionRecord = PureRecord<NoRecord, NoRecord>;
 
