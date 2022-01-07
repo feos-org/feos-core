@@ -17,9 +17,7 @@ mod segment;
 
 pub use chemical_record::ChemicalRecord;
 pub use identifier::{Identifier, IdentifierOption};
-pub use model_record::{
-    BinaryRecord, FromSegments, FromSegmentsBinary, GroupContributionRecord, NoRecord, PureRecord,
-};
+pub use model_record::{BinaryRecord, FromSegments, FromSegmentsBinary, PureRecord};
 pub use segment::SegmentRecord;
 
 /// Constructor methods for parameters.
@@ -102,11 +100,9 @@ where
             substances.iter().try_for_each(|identifier| {
                 match queried.insert(identifier.to_string()) {
                     true => Ok(()),
-                    false => Err(ParameterError::IncompatibleParameters(String::from(
-                        format!(
-                            "tried to add substance '{}' to system but it is already present.",
-                            identifier.to_string()
-                        ),
+                    false => Err(ParameterError::IncompatibleParameters(format!(
+                        "tried to add substance '{}' to system but it is already present.",
+                        identifier
                     ))),
                 }
             })?;
@@ -181,7 +177,7 @@ where
     /// The [FromSegments] trait needs to be implemented for both the model record
     /// and the ideal gas record.
     fn from_segments(
-        mut pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        chemical_records: Vec<ChemicalRecord>,
         segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>>,
         binary_segment_records: Option<Vec<BinaryRecord<String, Self::Binary>>>,
     ) -> Result<Self, ParameterError>
@@ -192,15 +188,13 @@ where
     {
         // update the pure records with model and ideal gas records
         // calculated from the gc method
-        pure_records.iter_mut().try_for_each(|pr| {
-            let segments = pr
-                .chemical_record
-                .clone()
-                .ok_or(ParameterError::InsufficientInformation)?
-                .segment_count(&segment_records)?;
-            pr.update_from_segments(segments);
-            Ok::<_, ParameterError>(())
-        })?;
+        let pure_records = chemical_records
+            .iter()
+            .map(|cr| {
+                cr.segment_count(&segment_records)
+                    .map(|segments| PureRecord::from_segments(cr.identifier().clone(), segments))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
         // Map: (id1, id2) -> model_record
         // empty, if no binary segment records are provided
@@ -212,9 +206,9 @@ where
             .collect();
 
         // For every component:  map: id -> count
-        let segment_id_counts: Vec<_> = pure_records
+        let segment_id_counts: Vec<_> = chemical_records
             .iter()
-            .map(|pr| pr.chemical_record.as_ref().unwrap().segment_id_count())
+            .map(|cr| cr.segment_id_count())
             .collect();
 
         // full matrix of binary records from the gc method.
@@ -263,13 +257,12 @@ where
 
         let file = File::open(file_pure)?;
         let reader = BufReader::new(file);
-        let pure_records: Vec<PureRecord<Self::Pure, Self::IdealGas>> =
-            serde_json::from_reader(reader)?;
-        let mut record_map: HashMap<_, _> = pure_records
+        let chemical_records: Vec<ChemicalRecord> = serde_json::from_reader(reader)?;
+        let mut record_map: HashMap<_, _> = chemical_records
             .into_iter()
             .filter_map(|record| {
                 record
-                    .identifier
+                    .identifier()
                     .as_string(search_option)
                     .map(|i| (i, record))
             })
@@ -287,7 +280,7 @@ where
         };
 
         // collect all pure records that were queried
-        let pure_records: Vec<_> = queried
+        let chemical_records: Vec<_> = queried
             .iter()
             .filter_map(|identifier| record_map.remove(&identifier.clone()))
             .collect();
@@ -308,7 +301,7 @@ where
             })
             .transpose()?;
 
-        Self::from_segments(pure_records, segment_records, binary_records)
+        Self::from_segments(chemical_records, segment_records, binary_records)
     }
 
     fn subset(&self, component_list: &[usize]) -> Self {

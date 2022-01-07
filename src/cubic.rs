@@ -16,7 +16,6 @@ use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::si::{SIArray1, SIUnit};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::f64::consts::SQRT_2;
 use std::rc::Rc;
 
@@ -102,7 +101,7 @@ impl PengRobinsonParameters {
                     acentric_factor: acentric_factor[i],
                 };
                 let id = Identifier::new("1", None, None, None, None, None);
-                PureRecord::new(id, molarweight[i], None, Some(record), None)
+                PureRecord::new(id, molarweight[i], Some(record), None)
             })
             .collect();
         Ok(PengRobinsonParameters::from_records(
@@ -130,9 +129,7 @@ impl Parameter for PengRobinsonParameters {
         let mut molarweight = Array1::zeros(n);
         let mut kappa = Array1::zeros(n);
 
-        let mut component_index = HashMap::with_capacity(n);
         for (i, record) in pure_records.iter().enumerate() {
-            component_index.insert(record.identifier.clone(), i);
             molarweight[i] = record.molarweight;
             match &record.model_record {
                 Some(r) => {
