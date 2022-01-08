@@ -7,25 +7,17 @@ use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
 // Auxiliary structure used to deserialize chemical records without bond information.
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum ChemicalRecordJSON {
-    List {
-        identifier: Identifier,
-        segments: Vec<String>,
-        bonds: Option<Vec<[usize; 2]>>,
-    },
-    Count {
-        identifier: Identifier,
-        segments: HashMap<String, f64>,
-        bonds: Option<HashMap<[String; 2], f64>>,
-    },
+#[derive(Serialize, Deserialize)]
+struct ChemicalRecordJSON {
+    identifier: Identifier,
+    segments: Vec<String>,
+    bonds: Option<Vec<[usize; 2]>>,
 }
 
 /// Chemical information of a substance.
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(from = "ChemicalRecordJSON")]
-#[serde(untagged)]
+#[serde(into = "ChemicalRecordJSON")]
 pub enum ChemicalRecord {
     List {
         identifier: Identifier,
@@ -41,17 +33,29 @@ pub enum ChemicalRecord {
 
 impl From<ChemicalRecordJSON> for ChemicalRecord {
     fn from(record: ChemicalRecordJSON) -> Self {
+        Self::new(record.identifier, record.segments, record.bonds)
+    }
+}
+
+impl From<ChemicalRecord> for ChemicalRecordJSON {
+    fn from(record: ChemicalRecord) -> Self {
         match record {
-            ChemicalRecordJSON::List {
+            ChemicalRecord::List {
                 identifier,
                 segments,
                 bonds,
-            } => Self::new(identifier, segments, bonds),
-            ChemicalRecordJSON::Count {
+            } => Self {
                 identifier,
                 segments,
-                bonds,
-            } => Self::new_count(identifier, segments, bonds),
+                bonds: Some(bonds),
+            },
+            ChemicalRecord::Count {
+                identifier: _,
+                segments: _,
+                bonds: _,
+            } => panic!(
+                "Only chemical records with detailed structural information can be serialized."
+            ),
         }
     }
 }

@@ -7,9 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct PureRecord<M, I> {
     pub identifier: Identifier,
     pub molarweight: f64,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub model_record: Option<M>,
+    pub model_record: M,
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ideal_gas_record: Option<I>,
@@ -20,7 +18,7 @@ impl<M, I> PureRecord<M, I> {
     pub fn new(
         identifier: Identifier,
         molarweight: f64,
-        model_record: Option<M>,
+        model_record: M,
         ideal_gas_record: Option<I>,
     ) -> Self {
         Self {
@@ -49,7 +47,7 @@ impl<M, I> PureRecord<M, I> {
             model_segments.push((s.model_record, n));
             ideal_gas_segments.push(s.ideal_gas_record.map(|ig| (ig, n)));
         }
-        let model_record = Some(M::from_segments(&model_segments));
+        let model_record = M::from_segments(&model_segments);
 
         let ideal_gas_segments: Option<Vec<_>> = ideal_gas_segments.into_iter().collect();
         let ideal_gas_record = ideal_gas_segments.as_deref().map(I::from_segments);
@@ -67,9 +65,7 @@ where
         write!(f, "PureRecord(")?;
         write!(f, "\n\tidentifier={},", self.identifier)?;
         write!(f, "\n\tmolarweight={},", self.molarweight)?;
-        if let Some(m) = self.model_record.as_ref() {
-            write!(f, "\n\tmodel_record={},", m)?;
-        }
+        write!(f, "\n\tmodel_record={},", self.model_record)?;
         if let Some(i) = self.ideal_gas_record.as_ref() {
             write!(f, "\n\tideal_gas_record={},", i)?;
         }

@@ -359,7 +359,7 @@ macro_rules! impl_pure_record {
         ///     The identifier of the pure component.
         /// molarweight : float
         ///     The molar weight (in g/mol) of the pure component.
-        /// model_record : ModelRecord, optional
+        /// model_record : ModelRecord
         ///     The pure component model parameters.
         /// ideal_gas_record: IdealGasRecord, optional
         ///     The pure component parameters for the ideal gas model.
@@ -368,9 +368,7 @@ macro_rules! impl_pure_record {
         /// -------
         /// PureRecord
         #[pyclass(name = "PureRecord")]
-        #[pyo3(
-            text_signature = "(identifier, molarweight, model_record=None, ideal_gas_record=None)"
-        )]
+        #[pyo3(text_signature = "(identifier, molarweight, model_record, ideal_gas_record=None)")]
         #[derive(Clone)]
         pub struct PyPureRecord(pub PureRecord<$model_record, $ideal_gas_record>);
 
@@ -380,13 +378,13 @@ macro_rules! impl_pure_record {
             fn new(
                 identifier: PyIdentifier,
                 molarweight: f64,
-                model_record: Option<$py_model_record>,
+                model_record: $py_model_record,
                 ideal_gas_record: Option<$py_ideal_gas_record>,
             ) -> PyResult<Self> {
                 Ok(Self(PureRecord::new(
                     identifier.0,
                     molarweight,
-                    model_record.map(|mr| mr.0),
+                    model_record.0,
                     ideal_gas_record.map(|ig| ig.0),
                 )))
             }
@@ -412,13 +410,13 @@ macro_rules! impl_pure_record {
             }
 
             #[getter]
-            fn get_model_record(&self) -> Option<$py_model_record> {
-                self.0.model_record.clone().map($py_model_record)
+            fn get_model_record(&self) -> $py_model_record {
+                $py_model_record(self.0.model_record.clone())
             }
 
             #[setter]
             fn set_model_record(&mut self, model_record: $py_model_record) {
-                self.0.model_record = Some(model_record.0);
+                self.0.model_record = model_record.0;
             }
 
             #[getter]
