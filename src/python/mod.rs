@@ -106,6 +106,11 @@ pub fn feos_core(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     py.run(
         "\
 import sys
+quantity.SINumber.__module__ = 'feos_core.si'
+quantity.SIArray1.__module__ = 'feos_core.si'
+quantity.SIArray2.__module__ = 'feos_core.si'
+quantity.SIArray3.__module__ = 'feos_core.si'
+quantity.SIArray4.__module__ = 'feos_core.si'
 sys.modules['feos_core.si'] = quantity
 sys.modules['feos_core.user_defined'] = user_defined
 sys.modules['feos_core.cubic'] = cubic
