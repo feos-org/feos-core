@@ -213,6 +213,7 @@ mod tests {
         let segment_records: Vec<SegmentRecord<ModelRecord, JobackRecord>> =
             serde_json::from_str(segments_json).expect("Unable to parse json.");
         let segments = ChemicalRecord::new(
+            Identifier::new("", None, None, None, None, None),
             vec![
                 String::from("-Cl"),
                 String::from("-Cl"),

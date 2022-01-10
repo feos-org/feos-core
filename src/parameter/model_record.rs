@@ -1,4 +1,3 @@
-use super::chemical_record::ChemicalRecord;
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
 use serde::{Deserialize, Serialize};
@@ -8,12 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct PureRecord<M, I> {
     pub identifier: Identifier,
     pub molarweight: f64,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub chemical_record: Option<ChemicalRecord>,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub model_record: Option<M>,
+    pub model_record: M,
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ideal_gas_record: Option<I>,
@@ -24,14 +18,12 @@ impl<M, I> PureRecord<M, I> {
     pub fn new(
         identifier: Identifier,
         molarweight: f64,
-        chemical_record: Option<ChemicalRecord>,
-        model_record: Option<M>,
+        model_record: M,
         ideal_gas_record: Option<I>,
     ) -> Self {
         Self {
             identifier,
             molarweight,
-            chemical_record,
             model_record,
             ideal_gas_record,
         }
@@ -41,24 +33,26 @@ impl<M, I> PureRecord<M, I> {
     ///
     /// The [FromSegments] trait needs to be implemented for both the model record
     /// and the ideal gas record.
-    pub fn update_from_segments<S>(&mut self, segments: S)
+    pub fn from_segments<S>(identifier: Identifier, segments: S) -> Self
     where
         M: FromSegments,
         I: FromSegments,
         S: IntoIterator<Item = (SegmentRecord<M, I>, f64)>,
     {
-        self.molarweight = 0.0;
+        let mut molarweight = 0.0;
         let mut model_segments = Vec::new();
         let mut ideal_gas_segments = Vec::new();
         for (s, n) in segments {
-            self.molarweight += s.molarweight * n;
+            molarweight += s.molarweight * n;
             model_segments.push((s.model_record, n));
             ideal_gas_segments.push(s.ideal_gas_record.map(|ig| (ig, n)));
         }
-        self.model_record = Some(M::from_segments(&model_segments));
+        let model_record = M::from_segments(&model_segments);
 
         let ideal_gas_segments: Option<Vec<_>> = ideal_gas_segments.into_iter().collect();
-        self.ideal_gas_record = ideal_gas_segments.as_deref().map(I::from_segments);
+        let ideal_gas_record = ideal_gas_segments.as_deref().map(I::from_segments);
+
+        Self::new(identifier, molarweight, model_record, ideal_gas_record)
     }
 }
 
@@ -71,33 +65,13 @@ where
         write!(f, "PureRecord(")?;
         write!(f, "\n\tidentifier={},", self.identifier)?;
         write!(f, "\n\tmolarweight={},", self.molarweight)?;
-        if let Some(m) = self.chemical_record.as_ref() {
-            write!(f, "\n\tchemical_record={},", m)?;
-        }
-        if let Some(m) = self.model_record.as_ref() {
-            write!(f, "\n\tmodel_record={},", m)?;
-        }
+        write!(f, "\n\tmodel_record={},", self.model_record)?;
         if let Some(i) = self.ideal_gas_record.as_ref() {
             write!(f, "\n\tideal_gas_record={},", i)?;
         }
         write!(f, "\n)")
     }
 }
-
-/// Empty record type to be used in models (e.g. group contribution
-/// methods) that do not require a model or ideal gas record.
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct NoRecord;
-
-impl std::fmt::Display for NoRecord {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "")
-    }
-}
-
-/// Convenience type for models in which molecules are purely described
-/// by their chemical record.
-pub type GroupContributionRecord = PureRecord<NoRecord, NoRecord>;
 
 /// Trait for models that implement a homosegmented group contribution
 /// method

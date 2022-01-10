@@ -16,7 +16,6 @@ use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::si::{SIArray1, SIUnit};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::f64::consts::SQRT_2;
 use std::rc::Rc;
 
@@ -102,7 +101,7 @@ impl PengRobinsonParameters {
                     acentric_factor: acentric_factor[i],
                 };
                 let id = Identifier::new("1", None, None, None, None, None);
-                PureRecord::new(id, molarweight[i], None, Some(record), None)
+                PureRecord::new(id, molarweight[i], record, None)
             })
             .collect();
         Ok(PengRobinsonParameters::from_records(
@@ -130,23 +129,13 @@ impl Parameter for PengRobinsonParameters {
         let mut molarweight = Array1::zeros(n);
         let mut kappa = Array1::zeros(n);
 
-        let mut component_index = HashMap::with_capacity(n);
         for (i, record) in pure_records.iter().enumerate() {
-            component_index.insert(record.identifier.clone(), i);
             molarweight[i] = record.molarweight;
-            match &record.model_record {
-                Some(r) => {
-                    tc[i] = r.tc;
-                    a[i] = 0.45724 * r.tc.powi(2) * KB_A3 / r.pc;
-                    b[i] = 0.07780 * r.tc * KB_A3 / r.pc;
-                    kappa[i] =
-                        0.37464 + (1.54226 - 0.26992 * r.acentric_factor) * r.acentric_factor;
-                }
-                None => panic!(
-                    "No Peng-Robinson parameters for {} found.",
-                    record.identifier.cas
-                ),
-            };
+            let r = &record.model_record;
+            tc[i] = r.tc;
+            a[i] = 0.45724 * r.tc.powi(2) * KB_A3 / r.pc;
+            b[i] = 0.07780 * r.tc * KB_A3 / r.pc;
+            kappa[i] = 0.37464 + (1.54226 - 0.26992 * r.acentric_factor) * r.acentric_factor;
         }
 
         let joback_records = pure_records
@@ -315,8 +304,8 @@ mod tests {
     fn peng_robinson() -> EosResult<()> {
         let mixture = pure_record_vec();
         let propane = mixture[0].clone();
-        let tc = propane.model_record.clone().unwrap().tc;
-        let pc = propane.model_record.clone().unwrap().pc;
+        let tc = propane.model_record.tc;
+        let pc = propane.model_record.pc;
         let parameters =
             PengRobinsonParameters::from_records(vec![propane.clone()], Array2::zeros((1, 1)));
         let pr = Rc::new(PengRobinson::new(Rc::new(parameters)));
