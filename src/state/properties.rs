@@ -243,6 +243,11 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         self.evaluate_property(Self::dp_dv_, contributions, true)
     }
 
+    /// Partial derivative of pressure w.r.t. density: $\left(\frac{\partial p}{\partial \rho}\right)_{T,N_i}$
+    pub fn dp_drho(&self, contributions: Contributions) -> QuantityScalar<U> {
+        -self.volume / self.density * self.dp_dv(contributions)
+    }
+
     /// Partial derivative of pressure w.r.t. temperature: $\left(\frac{\partial p}{\partial T}\right)_{V,N_i}$
     pub fn dp_dt(&self, contributions: Contributions) -> QuantityScalar<U> {
         self.evaluate_property(Self::dp_dt_, contributions, true)
@@ -256,6 +261,12 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Second partial derivative of pressure w.r.t. volume: $\left(\frac{\partial^2 p}{\partial V^2}\right)_{T,N_j}$
     pub fn d2p_dv2(&self, contributions: Contributions) -> QuantityScalar<U> {
         self.evaluate_property(Self::d2p_dv2_, contributions, true)
+    }
+
+    /// Second partial derivative of pressure w.r.t. density: $\left(\frac{\partial^2 p}{\partial \rho^2}\right)_{T,N_j}$
+    pub fn d2p_drho2(&self, contributions: Contributions) -> QuantityScalar<U> {
+        self.volume / (self.density * self.density)
+            * (self.volume * self.d2p_dv2(contributions) + 2.0 * self.dp_dv(contributions))
     }
 
     /// Partial molar volume: $v_i=\left(\frac{\partial V}{\partial N_i}\right)_{T,p,N_j}$
@@ -442,6 +453,12 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub fn isentropic_compressibility(&self) -> QuantityScalar<U> {
         let c = Contributions::Total;
         -self.c_v(c) / (self.c_p(c) * self.dp_dv(c) * self.volume)
+    }
+
+    /// Isothermal compressibility: $\kappa_T=-\frac{1}{V}\left(\frac{\partial V}{\partial p}\right)_{T,N_i}$
+    pub fn isothermal_compressibility(&self) -> QuantityScalar<U> {
+        let c = Contributions::Total;
+        -1.0 / (self.dp_dv(c) * self.volume)
     }
 
     /// Structure factor: $S(0)=k_BT\left(\frac{\partial\rho}{\partial p}\right)_{T,N_i}$
