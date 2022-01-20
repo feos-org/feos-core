@@ -287,7 +287,7 @@ where
 
         // Read segment records
         let segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>> =
-            serde_json::from_reader(BufReader::new(File::open(file_segments)?))?;
+            SegmentRecord::from_json(file_segments)?;
 
         // Read binary records
         let binary_records = file_binary
