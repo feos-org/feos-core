@@ -493,6 +493,7 @@ macro_rules! impl_segment_record {
             /// -------
             /// SegmentRecord
             #[staticmethod]
+            #[pyo3(text_signature = "(path)")]
             fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
                 Ok(SegmentRecord::from_json(path)?
                     .into_iter()
