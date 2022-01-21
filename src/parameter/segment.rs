@@ -1,5 +1,10 @@
+use super::ParameterError;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::fs::File;
 use std::hash::{Hash, Hasher};
+use std::io::BufReader;
+use std::path::Path;
 
 /// Parameters describing an individual segment of a molecule.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -24,6 +29,15 @@ impl<M, I> SegmentRecord<M, I> {
             model_record,
             ideal_gas_record,
         }
+    }
+
+    /// Read a list of `SegmentRecord`s from a JSON file.
+    pub fn from_json<P: AsRef<Path>>(file: P) -> Result<Vec<Self>, ParameterError>
+    where
+        I: DeserializeOwned,
+        M: DeserializeOwned,
+    {
+        Ok(serde_json::from_reader(BufReader::new(File::open(file)?))?)
     }
 }
 

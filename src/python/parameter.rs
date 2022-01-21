@@ -482,6 +482,25 @@ macro_rules! impl_segment_record {
                 )))
             }
 
+            /// Read a list of `SegmentRecord`s from a JSON file.
+            ///
+            /// Parameters
+            /// ----------
+            /// path : str
+            ///     Path to file containing the segment records.
+            ///
+            /// Returns
+            /// -------
+            /// SegmentRecord
+            #[staticmethod]
+            #[pyo3(text_signature = "(path)")]
+            fn from_json(path: &str) -> Result<Vec<Self>, ParameterError> {
+                Ok(SegmentRecord::from_json(path)?
+                    .into_iter()
+                    .map(|s| Self(s))
+                    .collect())
+            }
+
             #[getter]
             fn get_identifier(&self) -> String {
                 self.0.identifier.clone()
