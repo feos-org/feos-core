@@ -368,6 +368,23 @@ macro_rules! impl_state {
                 PySINumber::from(self.0.dp_dv(contributions.0))
             }
 
+            /// Return partial derivative of pressure w.r.t. density.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[args(contributions = "PyContributions::Total()")]
+            #[pyo3(text_signature = "($self, contributions)")]
+            fn dp_drho(&self, contributions: PyContributions) -> PySINumber {
+                PySINumber::from(self.0.dp_drho(contributions.0))
+            }
+
             /// Return partial derivative of pressure w.r.t. temperature.
             ///
             /// Parameters
@@ -417,6 +434,23 @@ macro_rules! impl_state {
             #[pyo3(text_signature = "($self, contributions)")]
             fn d2p_dv2(&self, contributions: PyContributions) -> PySINumber {
                 PySINumber::from(self.0.d2p_dv2(contributions.0))
+            }
+
+            /// Return second partial derivative of pressure w.r.t. density.
+            ///
+            /// Parameters
+            /// ----------
+            /// contributions: Contributions, optional
+            ///     the contributions of the helmholtz energy.
+            ///     Defaults to Contributions.Total.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[args(contributions = "PyContributions::Total()")]
+            #[pyo3(text_signature = "($self, contributions)")]
+            fn d2p_drho2(&self, contributions: PyContributions) -> PySINumber {
+                PySINumber::from(self.0.d2p_drho2(contributions.0))
             }
 
             /// Return molar volume of each component.
@@ -864,6 +898,16 @@ macro_rules! impl_state {
             #[pyo3(text_signature = "($self)")]
             fn isentropic_compressibility(&self) -> PySINumber {
                 PySINumber::from(self.0.isentropic_compressibility())
+            }
+
+            /// Return isothermal compressibility coefficient.
+            ///
+            /// Returns
+            /// -------
+            /// SINumber
+            #[pyo3(text_signature = "($self)")]
+            fn isothermal_compressibility(&self) -> PySINumber {
+                PySINumber::from(self.0.isothermal_compressibility())
             }
 
             /// Return structure factor.
