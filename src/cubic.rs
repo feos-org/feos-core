@@ -72,7 +72,7 @@ impl std::fmt::Display for PengRobinsonParameters {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.pure_records
             .iter()
-            .try_for_each(|pr| writeln!(f, "{}", pr.to_string()))?;
+            .try_for_each(|pr| writeln!(f, "{}", pr))?;
         writeln!(f, "\nk_ij:\n{}", self.k_ij)
     }
 }

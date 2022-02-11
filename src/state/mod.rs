@@ -355,8 +355,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             )));
         }
         let x = partial_density
-            .map(|pd| pd / pd.sum())
-            .or_else(|| moles.map(|ms| ms / ms.sum()));
+            .map(|pd| pd.to_reduced(pd.sum()))
+            .or_else(|| moles.map(|ms| ms.to_reduced(ms.sum())))
+            .transpose()?;
         let x_u = match (x, molefracs, eos.components()) {
             (Some(_), Some(_), _) => {
                 return Err(EosError::UndeterminedState(String::from(
@@ -364,8 +365,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 )))
             }
             (Some(x), None, _) => x,
-            (None, Some(x), _) => x.clone().into(),
-            (None, None, 1) => arr1(&[1.0]).into(),
+            (None, Some(x), _) => x.clone(),
+            (None, None, 1) => arr1(&[1.0]),
             _ => {
                 return Err(EosError::UndeterminedState(String::from(
                     "Missing composition.",
@@ -373,37 +374,41 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             }
         };
 
-        // If no extensive property is given, moles is set to reference moles.
-        // Therefore, moles and composition are known from this point on.
-        let n_t = n.unwrap_or_else(U::reference_moles);
-        let n_i = x_u * n_t;
-        let v = volume.or_else(|| rho.map(|d| n_t / d));
+        // If no extensive property is given, moles is set to the reference value.
+        if let (None, None) = (volume, n) {
+            n = Some(U::reference_moles())
+        }
+        let n_i = n.map(|n| &x_u * n);
+        let v = volume.or_else(|| rho.and_then(|d| n.map(|n| n / d)));
 
         // check if new state can be created using default constructor
-        if let (Some(v), Some(t)) = (v, temperature) {
-            return State::new_nvt(eos, t, v, &n_i);
+        if let (Some(v), Some(t), Some(n_i)) = (v, temperature, &n_i) {
+            return State::new_nvt(eos, t, v, n_i);
         }
 
         // Check if new state can be created using density iteration
-        if let (Some(p), Some(t)) = (pressure, temperature) {
-            return State::new_npt(eos, t, p, &n_i, density_initialization);
+        if let (Some(p), Some(t), Some(n_i)) = (pressure, temperature, &n_i) {
+            return State::new_npt(eos, t, p, n_i, density_initialization);
+        }
+        if let (Some(p), Some(t), Some(v)) = (pressure, temperature, v) {
+            return State::new_npvx(eos, t, p, v, &x_u, density_initialization);
         }
 
         // Check if new state can be created using molar_enthalpy and temperature
-        if let (Some(p), Some(h)) = (pressure, molar_enthalpy) {
-            return State::new_nph(eos, p, h, &n_i, density_initialization, initial_temperature);
+        if let (Some(p), Some(h), Some(n_i)) = (pressure, molar_enthalpy, &n_i) {
+            return State::new_nph(eos, p, h, n_i, density_initialization, initial_temperature);
         }
-        if let (Some(p), Some(s)) = (pressure, molar_entropy) {
-            return State::new_nps(eos, p, s, &n_i, density_initialization, initial_temperature);
+        if let (Some(p), Some(s), Some(n_i)) = (pressure, molar_entropy, &n_i) {
+            return State::new_nps(eos, p, s, n_i, density_initialization, initial_temperature);
         }
-        if let (Some(t), Some(h)) = (temperature, molar_enthalpy) {
-            return State::new_nth(eos, t, h, &n_i, density_initialization);
+        if let (Some(t), Some(h), Some(n_i)) = (temperature, molar_enthalpy, &n_i) {
+            return State::new_nth(eos, t, h, n_i, density_initialization);
         }
-        if let (Some(t), Some(s)) = (temperature, molar_entropy) {
-            return State::new_nts(eos, t, s, &n_i, density_initialization);
+        if let (Some(t), Some(s), Some(n_i)) = (temperature, molar_entropy, &n_i) {
+            return State::new_nts(eos, t, s, n_i, density_initialization);
         }
-        if let (Some(u), Some(v)) = (molar_internal_energy, volume) {
-            return State::new_nvu(eos, v, u, &n_i, initial_temperature);
+        if let (Some(u), Some(v), Some(n_i)) = (molar_internal_energy, volume, &n_i) {
+            return State::new_nvu(eos, v, u, n_i, initial_temperature);
         }
         Err(EosError::UndeterminedState(String::from(
             "Missing input parameters.",
@@ -476,6 +481,21 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         } else {
             liquid
         }
+    }
+
+    /// Return a new `State` for given pressure $p$, volume $V$, temperature $T$ and composition $x_i$.
+    pub fn new_npvx(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        pressure: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        molefracs: &Array1<f64>,
+        density_initialization: DensityInitialization<U>,
+    ) -> EosResult<Self> {
+        let moles = molefracs * U::reference_moles();
+        let state = Self::new_npt(eos, temperature, pressure, &moles, density_initialization)?;
+        let moles = state.partial_density * volume;
+        Self::new_nvt(eos, temperature, volume, &moles)
     }
 
     /// Return a new `State` for given pressure $p$ and molar enthalpy $h$.

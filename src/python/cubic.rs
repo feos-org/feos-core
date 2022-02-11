@@ -19,6 +19,14 @@ use std::rc::Rc;
 #[derive(Clone)]
 pub struct PyPengRobinsonRecord(PengRobinsonRecord);
 
+#[pymethods]
+impl PyPengRobinsonRecord {
+    #[new]
+    fn new(tc: f64, pc: f64, acentric_factor: f64) -> Self {
+        Self(PengRobinsonRecord::new(tc, pc, acentric_factor))
+    }
+}
+
 #[pyproto]
 impl pyo3::class::basic::PyObjectProtocol for PyPengRobinsonRecord {
     fn __repr__(&self) -> PyResult<String> {
