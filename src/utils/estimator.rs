@@ -115,7 +115,7 @@ where
 impl<U: EosUnit, E: EquationOfState> fmt::Display for Estimator<U, E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for d in self.data.iter() {
-            writeln!(f, "{}", d.to_string())?;
+            writeln!(f, "{}", d)?;
         }
         Ok(())
     }
