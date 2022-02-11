@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- Fix state constructor for $T$, $p$, $V$, $x_i$ specification. [#26](https://github.com/feos-org/feos-core/pull/26)
+- Fix state constructor for `T`, `p`, `V`, `x_i` specification. [#26](https://github.com/feos-org/feos-core/pull/26)
 
 ## [0.1.3] - 2022-01-21
 ### Added
