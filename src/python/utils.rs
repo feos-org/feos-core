@@ -308,7 +308,7 @@ macro_rules! impl_estimator {
             /// -------
             /// List[SIArray1]
             #[pyo3(text_signature = "($self, eos)")]
-            fn predict<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Vec<PySIArray1>> {
+            fn predict(&self, eos: &$py_eos) -> PyResult<Vec<PySIArray1>> {
                 Ok(self
                     .0
                     .predict(&eos.0)?
