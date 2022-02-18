@@ -4,15 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.4] - 2022-02-18
 ### Fixed
 - Fix state constructor for `T`, `p`, `V`, `x_i` specification. [#26](https://github.com/feos-org/feos-core/pull/26)
+
+### Added
+- Added method `predict` to `Estimator`. [#27](https://github.com/feos-org/feos-core/pull/27)
+
+### Changed
+- Changed method for vapor pressure in `DataSet` to `vapor_pressure` (was `pressure` of VLE liquid phase). [#27](https://github.com/feos-org/feos-core/pull/27)
 
 ## [0.1.3] - 2022-01-21
 ### Added
 - Added the following properties to `State`: [#21](https://github.com/feos-org/feos-core/pull/21)
-  - `dp_drho` partial derivative of pressure w.r.t. pressure
-  - `d2p_drho2` second partial derivative of pressure w.r.t. pressure
+  - `dp_drho` partial derivative of pressure w.r.t. density
+  - `d2p_drho2` second partial derivative of pressure w.r.t. density
   - `isothermal_compressibility` the isothermal compressibility
 - Read a list of segment records directly from a JSON file. [#22](https://github.com/feos-org/feos-core/pull/22)
 
