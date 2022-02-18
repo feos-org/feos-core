@@ -296,6 +296,27 @@ macro_rules! impl_estimator {
                 Ok(self.0.cost(&eos.0)?.view().to_pyarray(py))
             }
 
+            /// Return the properties as computed by the
+            /// equation of state for each `DataSet`.
+            ///
+            /// Parameters
+            /// ----------
+            /// eos : PyEos
+            ///     The equation of state that is used.
+            ///
+            /// Returns
+            /// -------
+            /// List[SIArray1]
+            #[pyo3(text_signature = "($self, eos)")]
+            fn predict<'py>(&self, eos: &$py_eos, py: Python<'py>) -> PyResult<Vec<PySIArray1>> {
+                Ok(self
+                    .0
+                    .predict(&eos.0)?
+                    .iter()
+                    .map(|d| PySIArray1(d))
+                    .collect())
+            }
+
             /// Return the relative difference between experimental data
             /// and prediction of the equation of state for each ``DataSet``.
             ///
