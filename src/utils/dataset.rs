@@ -4,7 +4,7 @@
 //! other models.
 use crate::equation_of_state::{EquationOfState, MolarWeight};
 use crate::phase_equilibria::{PhaseEquilibrium, VLEOptions};
-use crate::state::{Contributions, DensityInitialization, State};
+use crate::state::{DensityInitialization, State};
 use crate::utils::estimator::FitError;
 use crate::EosUnit;
 use ndarray::{arr1, Array1};
@@ -157,21 +157,11 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         for i in 0..self.datapoints {
             let t = self.temperature.get(i);
             if t < tc {
-                let state = PhaseEquilibrium::pure_t(
-                    eos,
-                    self.temperature.get(i),
-                    None,
-                    VLEOptions::default(),
-                );
-                if let Ok(s) = state {
-                    prediction
-                        .try_set(i, s.liquid().pressure(Contributions::Total))
-                        .unwrap();
+                if let Some(pvap) =
+                    PhaseEquilibrium::vapor_pressure(eos, self.temperature.get(i))[0]
+                {
+                    prediction.try_set(i, pvap).unwrap();
                 } else {
-                    println!(
-                        "Failed to compute vapor pressure, T = {}",
-                        self.temperature.get(i)
-                    );
                     prediction.try_set(i, f64::NAN * unit).unwrap();
                 }
             } else {

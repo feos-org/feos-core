@@ -4,7 +4,7 @@ use super::dataset::*;
 use crate::equation_of_state::EquationOfState;
 use crate::EosUnit;
 use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
-use quantity::{QuantityError, QuantityScalar};
+use quantity::{QuantityArray1, QuantityError, QuantityScalar};
 use std::fmt;
 use std::fmt::Write;
 use std::num::ParseFloatError;
@@ -72,6 +72,11 @@ where
         } else {
             Err(FitError::IncompatibleInput)
         }
+    }
+
+    /// Returns the properties as computed by the equation of state for each `DataSet`.
+    pub fn predict(&self, eos: &Rc<E>) -> Result<Vec<QuantityArray1<U>>, FitError> {
+        self.data.iter().map(|d| d.predict(eos)).collect()
     }
 
     /// Returns the relative difference for each `DataSet`.
