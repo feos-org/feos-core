@@ -313,7 +313,7 @@ macro_rules! impl_estimator {
                     .0
                     .predict(&eos.0)?
                     .iter()
-                    .map(|d| PySIArray1(d))
+                    .map(|d| PySIArray1::from(d.clone()))
                     .collect())
             }
 
