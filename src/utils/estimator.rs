@@ -1,6 +1,7 @@
 //! The [`Estimator`] struct can be used to store multiple [`DataSet`]s for convenient parameter
 //! optimization.
 use super::dataset::*;
+use super::Loss;
 use crate::equation_of_state::EquationOfState;
 use crate::EosUnit;
 use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
@@ -31,6 +32,7 @@ pub enum FitError {
 /// evaluate an equation of state versus experimental data.
 pub struct Estimator<U: EosUnit, E: EquationOfState> {
     data: Vec<Rc<dyn DataSet<U, E>>>,
+    loss: Vec<Loss>,
     weights: Vec<f64>,
 }
 
@@ -42,8 +44,8 @@ where
     ///
     /// The weights are normalized and used as multiplicator when the
     /// cost function across all `DataSet`s is evaluated.
-    pub fn new(data: Vec<Rc<dyn DataSet<U, E>>>, weights: Vec<f64>) -> Self {
-        Self { data, weights }
+    pub fn new(data: Vec<Rc<dyn DataSet<U, E>>>, loss: Vec<Loss>, weights: Vec<f64>) -> Self {
+        Self { data, loss, weights }
     }
 
     /// Add a `DataSet` and its weight.
@@ -56,14 +58,17 @@ where
     ///
     /// Each cost contains the inverse weight.
     pub fn cost(&self, eos: &Rc<E>) -> Result<Array1<f64>, FitError> {
+        let w_sum = self.weights.iter().sum::<f64>();
+        let w = arr1(&self.weights) / w_sum;
+
         let predictions: Result<Vec<Array1<f64>>, FitError> = self
             .data
             .iter()
             .enumerate()
             .map(|(i, d)| {
-                let w_sum = self.weights.iter().sum::<f64>();
-                let w = arr1(&self.weights) / w_sum;
-                Ok(d.cost(eos)? * w[i])
+                let mut res = d.relative_difference(eos).unwrap();
+                self.loss[i].apply(&mut res.view_mut());
+                Ok(res * w[i] / d.datapoints() as f64)
             })
             .collect();
         if let Ok(p) = predictions {

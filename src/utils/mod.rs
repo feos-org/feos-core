@@ -5,5 +5,7 @@
 //! - [`Estimator`]: stores multiple `DataSet`
 mod dataset;
 mod estimator;
+mod loss;
 pub use dataset::*;
 pub use estimator::{Estimator, FitError};
+pub use loss::*;

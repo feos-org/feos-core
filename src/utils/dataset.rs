@@ -6,7 +6,7 @@ use crate::equation_of_state::{EquationOfState, MolarWeight};
 use crate::phase_equilibria::{PhaseEquilibrium, VLEOptions};
 use crate::state::{DensityInitialization, State};
 use crate::utils::estimator::FitError;
-use crate::EosUnit;
+use crate::{Contributions, EosUnit};
 use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::collections::HashMap;
@@ -147,25 +147,31 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
-        let tc =
+        let critical_point =
             State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
-                .unwrap()
-                .temperature;
+                .unwrap();
+        let tc = critical_point.temperature;
+        let pc = critical_point.pressure(Contributions::Total);
+
+        let t0 = 0.9 * tc;
+        let p0 = PhaseEquilibrium::vapor_pressure(eos, t0)[0].unwrap();
+
+        let b = pc.to_reduced(p0).unwrap().ln() / (1.0 / tc - 1.0 / t0);
+        let a = pc.to_reduced(U::reference_pressure()).unwrap() - b.to_reduced(tc).unwrap();
 
         let unit = self.target.get(0);
         let mut prediction = Array1::zeros(self.datapoints) * unit;
         for i in 0..self.datapoints {
             let t = self.temperature.get(i);
-            if t < tc {
-                if let Some(pvap) =
-                    PhaseEquilibrium::vapor_pressure(eos, self.temperature.get(i))[0]
-                {
-                    prediction.try_set(i, pvap).unwrap();
-                } else {
-                    prediction.try_set(i, f64::NAN * unit).unwrap();
-                }
+            if let Some(pvap) = PhaseEquilibrium::vapor_pressure(eos, t)[0] {
+                prediction.try_set(i, pvap).unwrap();
             } else {
-                prediction.try_set(i, f64::NAN * unit).unwrap();
+                prediction
+                    .try_set(
+                        i,
+                        pc * (a + (b * (1.0 / t - 1.0 / tc)).into_value().unwrap()).exp(),
+                    )
+                    .unwrap();
             }
         }
         Ok(prediction)

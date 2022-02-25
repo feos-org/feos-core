@@ -11,6 +11,46 @@ impl From<FitError> for PyErr {
 #[macro_export]
 macro_rules! impl_estimator {
     ($eos:ty, $py_eos:ty) => {
+        #[pyclass(name = "Loss", unsendable)]
+        #[derive(Clone)]
+        pub struct PyLoss(Loss);
+
+        #[pymethods]
+        impl PyLoss {
+            /// Create a linear loss function.
+            /// 
+            /// `loss = s**2 * rho(f**2 / s**2)`
+            /// where `rho(z) = z` and `s = 1`.
+            ///
+            /// Returns
+            /// -------
+            /// Loss
+            #[staticmethod]
+            pub fn linear() -> Self {
+                Self(Loss::Linear)
+            }
+
+            /// Create a loss function according to Huber's method.
+            /// 
+            /// `loss = s**2 * rho(f**2 / s**2)`
+            /// where `rho(z) = z if z <= 1 else 2*z**0.5 - 1`.
+            /// `s` is the scaling factor.
+            ///
+            /// Parameters
+            /// ----------
+            /// scaling_factor : f64
+            ///     Scaling factor for Huber loss function.
+            ///
+            /// Returns
+            /// -------
+            /// Loss
+            #[staticmethod]
+            #[pyo3(text_signature = "(scaling_factor)")]
+            pub fn huber(scaling_factor: f64) -> Self {
+                Self(Loss::Huber(scaling_factor))
+            }
+        }
+
         /// A collection of experimental data that can be used to compute
         /// cost functions and make predictions using an equation of state.
         #[pyclass(name = "DataSet", unsendable)]
@@ -268,18 +308,21 @@ macro_rules! impl_estimator {
         #[pymethods]
         impl PyEstimator {
             #[new]
-            fn new(data: Vec<PyDataSet>, weights: Vec<f64>) -> Self {
+            fn new(data: Vec<PyDataSet>, loss: Vec<PyLoss>, weights: Vec<f64>) -> Self {
                 Self(Estimator::new(
                     data.iter().map(|d| d.0.clone()).collect(),
+                    loss.iter().map(|l| l.0.clone()).collect(),
                     weights,
                 ))
             }
 
             /// Compute the cost function for each ``DataSet``.
             ///
-            /// The cost function that is used depends on the
-            /// property. See the class constructors for the ``DataSet``
-            /// to learn about the cost functions of the properties.
+            /// The cost function is:
+            /// - The relative difference between prediction and target value,
+            /// - to which a loss function is applied,
+            /// - and which is weighted according to the number of datapoints,
+            /// - and the relative weights as defined in the Estimator object.
             ///
             /// Parameters
             /// ----------
