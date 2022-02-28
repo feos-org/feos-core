@@ -71,14 +71,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         QuantityScalar<U>: std::fmt::Display,
     {
         let solver = Brent::new(1e-10, 1.0 - 1e-10, options.tol.unwrap_or(TOL_CRIT_POINT));
-        let cost = CritOp::new(eos, tp);
+        let cost = CritOp::new(eos, tp, options.clone());
         let x = Executor::new(cost, solver, 0.5)
             .max_iters(options.max_iter.unwrap_or(MAX_ITER_CRIT_POINT) as u64)
             .run()?
             .state
             .best_param;
         let moles = arr1(&[x, 1.0 - x]) * U::reference_moles();
-        State::critical_point(eos, Some(&moles), None, SolverOptions::default())
+        State::critical_point(eos, Some(&moles), None, options)
     }
 
     /// Calculate the critical point of a system for given moles.
@@ -239,13 +239,15 @@ pub fn critical_point_objective<E: EquationOfState>(
 struct CritOp<U: EosUnit, E: EquationOfState> {
     eos: Rc<E>,
     tp: TPSpec<U>,
+    opts: VLEOptions,
 }
 
 impl<U: EosUnit, E: EquationOfState> CritOp<U, E> {
-    fn new(eos: &Rc<E>, tp: TPSpec<U>) -> Self {
+    fn new(eos: &Rc<E>, tp: TPSpec<U>, opts: VLEOptions) -> Self {
         Self {
             eos: eos.clone(),
             tp,
+            opts,
         }
     }
 }
@@ -262,7 +264,7 @@ where
 
     fn apply(&self, p: &Self::Param) -> Result<Self::Output, Error> {
         let moles = arr1(&[*p, 1.0 - *p]) * U::reference_moles();
-        let state = State::critical_point(&self.eos, Some(&moles), None, SolverOptions::default())?;
+        let state = State::critical_point(&self.eos, Some(&moles), None, self.opts.clone())?;
         match self.tp {
             TPSpec::Pressure(p) => Ok(
                 (state.pressure(Contributions::Total) - p).to_reduced(U::reference_pressure())?
