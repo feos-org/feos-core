@@ -191,6 +191,8 @@ macro_rules! impl_state {
             ///     The equation of state to use.
             /// temperature: SINumber
             ///     temperature.
+            /// initial_molefracs: [float], optional
+            ///     An initial guess for the composition.
             /// max_iter : int, optional
             ///     The maximum number of iterations.
             /// tol: float, optional
@@ -202,10 +204,11 @@ macro_rules! impl_state {
             /// -------
             /// State : State at critical conditions.
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(text_signature = "(eos, temperature, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)")]
             fn critical_point_binary_t(
                 eos: $py_eos,
                 temperature: PySINumber,
+                initial_molefracs: Option<[f64; 2]>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<PyVerbosity>,
@@ -213,6 +216,7 @@ macro_rules! impl_state {
                 Ok(PyState(State::critical_point_binary_t(
                     &eos.0,
                     temperature.into(),
+                    initial_molefracs,
                     (max_iter, tol, verbosity.map(|v| v.0)).into(),
                 )?))
             }
@@ -226,6 +230,10 @@ macro_rules! impl_state {
             ///     The equation of state to use.
             /// pressure: SINumber
             ///     pressure.
+            /// initial_temperature: SINumber, optional
+            ///     The initial temperature.
+            /// initial_molefracs: [float], optional
+            ///     An initial guess for the composition.
             /// max_iter : int, optional
             ///     The maximum number of iterations.
             /// tol: float, optional
@@ -237,10 +245,12 @@ macro_rules! impl_state {
             /// -------
             /// State : State at critical conditions.
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature, max_iter=None, tol=None, verbosity=None)")]
+            #[pyo3(text_signature = "(eos, pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)")]
             fn critical_point_binary_p(
                 eos: $py_eos,
                 pressure: PySINumber,
+                initial_temperature: Option<PySINumber>,
+                initial_molefracs: Option<[f64; 2]>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<PyVerbosity>,
@@ -248,6 +258,8 @@ macro_rules! impl_state {
                 Ok(PyState(State::critical_point_binary_p(
                     &eos.0,
                     pressure.into(),
+                    initial_temperature.map(|t| t.into()),
+                    initial_molefracs,
                     (max_iter, tol, verbosity.map(|v| v.0)).into(),
                 )?))
             }
