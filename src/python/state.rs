@@ -22,11 +22,13 @@ macro_rules! impl_state {
         /// molefracs : numpy.ndarray[float]
         ///     Molar fraction of each component.
         /// pressure : SINumber, optional
-        ///     System pressure.
-        /// enthalpy : SINumber, optional
-        ///     System enthalpy.
-        /// entropy : SINumber, optional
-        ///     System entropy.
+        ///     Pressure.
+        /// molar_enthalpy : SINumber, optional
+        ///     Molar enthalpy.
+        /// molar_entropy : SINumber, optional
+        ///     Molar entropy.
+        /// molar_internal_energy: SINumber, optional
+        ///     Molar internal energy
         /// density_initialization : {'vapor', 'liquid', SINumber, None}, optional
         ///     Method used to initialize density for density iteration.
         ///     'vapor' and 'liquid' are inferred from the maximum density of the equation of state.
@@ -34,7 +36,7 @@ macro_rules! impl_state {
         ///     different, the result with the lower free energy is returned.
         /// initial_temperature : SINumber, optional
         ///     Initial temperature for temperature iteration. Can improve convergence
-        ///     when the state is specified with pressure and entropy or enthalpy.
+        ///     when the state is specified with pressure and molar entropy or enthalpy.
         ///
         /// Returns
         /// -------
@@ -46,7 +48,7 @@ macro_rules! impl_state {
         ///     When the state cannot be created using the combination of input.
         #[pyclass(name = "State", unsendable)]
         #[derive(Clone)]
-        #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, enthalpy=None, entropy=None, density_initialization=None, initial_temperature=None)")]
+        #[pyo3(text_signature = "(eos, temperature=None, volume=None, density=None, partial_density=None, total_moles=None, moles=None, molefracs=None, pressure=None, molar_enthalpy=None, molar_entropy=None, molar_internal_energy=None, density_initialization=None, initial_temperature=None)")]
         pub struct PyState(pub State<SIUnit, $eos>);
 
         #[pymethods]
@@ -62,9 +64,9 @@ macro_rules! impl_state {
                 moles: Option<PySIArray1>,
                 molefracs: Option<&PyArray1<f64>>,
                 pressure: Option<PySINumber>,
-                enthalpy: Option<PySINumber>,
-                entropy: Option<PySINumber>,
-                internal_energy: Option<PySINumber>,
+                molar_enthalpy: Option<PySINumber>,
+                molar_entropy: Option<PySINumber>,
+                molar_internal_energy: Option<PySINumber>,
                 density_initialization: Option<&PyAny>,
                 initial_temperature: Option<PySINumber>,
             ) -> PyResult<Self> {
@@ -98,9 +100,9 @@ macro_rules! impl_state {
                     moles.as_deref(),
                     x.as_ref(),
                     pressure.map(|s| s.into()),
-                    enthalpy.map(|s| s.into()),
-                    entropy.map(|s| s.into()),
-                    internal_energy.map(|s| s.into()),
+                    molar_enthalpy.map(|s| s.into()),
+                    molar_entropy.map(|s| s.into()),
+                    molar_internal_energy.map(|s| s.into()),
                     density_init?,
                     initial_temperature.map(|s| s.into()),
                 )?;

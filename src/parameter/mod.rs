@@ -61,7 +61,7 @@ where
         Self::from_records(pure_records, binary_record)
     }
 
-    /// Return the original pure and binary records that werde used to construct the parameters.
+    /// Return the original pure and binary records that were used to construct the parameters.
     #[allow(clippy::type_complexity)]
     fn records(
         &self,

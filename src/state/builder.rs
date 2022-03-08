@@ -63,9 +63,9 @@ pub struct StateBuilder<'a, U: EosUnit, E: EquationOfState> {
     moles: Option<&'a QuantityArray1<U>>,
     molefracs: Option<&'a Array1<f64>>,
     pressure: Option<QuantityScalar<U>>,
-    enthalpy: Option<QuantityScalar<U>>,
-    entropy: Option<QuantityScalar<U>>,
-    internal_energy: Option<QuantityScalar<U>>,
+    molar_enthalpy: Option<QuantityScalar<U>>,
+    molar_entropy: Option<QuantityScalar<U>>,
+    molar_internal_energy: Option<QuantityScalar<U>>,
     density_initialization: DensityInitialization<U>,
     initial_temperature: Option<QuantityScalar<U>>,
 }
@@ -83,9 +83,9 @@ impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
             moles: None,
             molefracs: None,
             pressure: None,
-            enthalpy: None,
-            entropy: None,
-            internal_energy: None,
+            molar_enthalpy: None,
+            molar_entropy: None,
+            molar_internal_energy: None,
             density_initialization: DensityInitialization::None,
             initial_temperature: None,
         }
@@ -139,21 +139,21 @@ impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
         self
     }
 
-    /// Provide the enthalpy for the new state.
-    pub fn enthalpy(mut self, enthalpy: QuantityScalar<U>) -> Self {
-        self.enthalpy = Some(enthalpy);
+    /// Provide the molar enthalpy for the new state.
+    pub fn molar_enthalpy(mut self, molar_enthalpy: QuantityScalar<U>) -> Self {
+        self.molar_enthalpy = Some(molar_enthalpy);
         self
     }
 
-    /// Provide the entropy for the new state.
-    pub fn entropy(mut self, entropy: QuantityScalar<U>) -> Self {
-        self.entropy = Some(entropy);
+    /// Provide the molar entropy for the new state.
+    pub fn molar_entropy(mut self, molar_entropy: QuantityScalar<U>) -> Self {
+        self.molar_entropy = Some(molar_entropy);
         self
     }
 
-    /// Provide the internal energy for the new state.
-    pub fn internal_energy(mut self, internal_energy: QuantityScalar<U>) -> Self {
-        self.internal_energy = Some(internal_energy);
+    /// Provide the molar internal energy for the new state.
+    pub fn molar_internal_energy(mut self, molar_internal_energy: QuantityScalar<U>) -> Self {
+        self.molar_internal_energy = Some(molar_internal_energy);
         self
     }
 
@@ -193,9 +193,9 @@ impl<'a, U: EosUnit, E: EquationOfState> StateBuilder<'a, U, E> {
             self.moles,
             self.molefracs,
             self.pressure,
-            self.enthalpy,
-            self.entropy,
-            self.internal_energy,
+            self.molar_enthalpy,
+            self.molar_entropy,
+            self.molar_internal_energy,
             self.density_initialization,
             self.initial_temperature,
         )
@@ -214,9 +214,9 @@ impl<'a, U: EosUnit, E: EquationOfState> Clone for StateBuilder<'a, U, E> {
             moles: self.moles,
             molefracs: self.molefracs,
             pressure: self.pressure,
-            enthalpy: self.enthalpy,
-            entropy: self.entropy,
-            internal_energy: self.internal_energy,
+            molar_enthalpy: self.molar_enthalpy,
+            molar_entropy: self.molar_entropy,
+            molar_internal_energy: self.molar_internal_energy,
             density_initialization: self.density_initialization,
             initial_temperature: self.initial_temperature,
         }
