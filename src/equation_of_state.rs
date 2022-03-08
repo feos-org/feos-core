@@ -1,5 +1,5 @@
 use crate::errors::{EosError, EosResult};
-use crate::state::{State, StateHD};
+use crate::state::StateHD;
 use crate::EosUnit;
 use ndarray::prelude::*;
 use num_dual::{Dual3, Dual3_64, Dual64, DualNum, HyperDual, HyperDual64};
@@ -295,11 +295,26 @@ pub trait EquationOfState {
 }
 
 /// Reference values and residual entropy correlations for entropy scaling.
-pub trait EntropyScaling<U: EosUnit, E: EquationOfState> {
-    fn viscosity_reference(&self, state: &State<U, E>) -> EosResult<QuantityScalar<U>>;
+pub trait EntropyScaling<U: EosUnit> {
+    fn viscosity_reference(
+        &self,
+        temperature: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+    ) -> EosResult<QuantityScalar<U>>;
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
-    fn diffusion_reference(&self, state: &State<U, E>) -> EosResult<QuantityScalar<U>>;
+    fn diffusion_reference(
+        &self,
+        temperature: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+    ) -> EosResult<QuantityScalar<U>>;
     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
-    fn thermal_conductivity_reference(&self, state: &State<U, E>) -> EosResult<QuantityScalar<U>>;
+    fn thermal_conductivity_reference(
+        &self,
+        temperature: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+    ) -> EosResult<QuantityScalar<U>>;
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
 }
