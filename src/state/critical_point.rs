@@ -1,7 +1,7 @@
 use super::{Contributions, State, StateHD, TPSpec};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
-use crate::phase_equilibria::{VLEOptions, Verbosity};
+use crate::phase_equilibria::{SolverOptions, Verbosity};
 use crate::EosUnit;
 use argmin::prelude::{ArgminOp, Error, Executor};
 use argmin::solver::brent::Brent;
@@ -21,7 +21,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub fn critical_point_pure(
         eos: &Rc<E>,
         initial_temperature: Option<QuantityScalar<U>>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Vec<Self>>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -42,7 +42,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub fn critical_point_binary_t(
         eos: &Rc<E>,
         temperature: QuantityScalar<U>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -54,7 +54,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub fn critical_point_binary_p(
         eos: &Rc<E>,
         pressure: QuantityScalar<U>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -65,7 +65,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub(crate) fn critical_point_binary(
         eos: &Rc<E>,
         tp: TPSpec<U>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -78,7 +78,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             .state
             .best_param;
         let moles = arr1(&[x, 1.0 - x]) * U::reference_moles();
-        State::critical_point(eos, Some(&moles), None, VLEOptions::default())
+        State::critical_point(eos, Some(&moles), None, SolverOptions::default())
     }
 
     /// Calculate the critical point of a system for given moles.
@@ -86,7 +86,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         eos: &Rc<E>,
         moles: Option<&QuantityArray1<U>>,
         initial_temperature: Option<QuantityScalar<U>>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -113,7 +113,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         eos: &Rc<E>,
         moles: &QuantityArray1<U>,
         initial_temperature: QuantityScalar<U>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -262,7 +262,7 @@ where
 
     fn apply(&self, p: &Self::Param) -> Result<Self::Output, Error> {
         let moles = arr1(&[*p, 1.0 - *p]) * U::reference_moles();
-        let state = State::critical_point(&self.eos, Some(&moles), None, VLEOptions::default())?;
+        let state = State::critical_point(&self.eos, Some(&moles), None, SolverOptions::default())?;
         match self.tp {
             TPSpec::Pressure(p) => Ok(
                 (state.pressure(Contributions::Total) - p).to_reduced(U::reference_pressure())?

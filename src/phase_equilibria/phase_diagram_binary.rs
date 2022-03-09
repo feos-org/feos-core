@@ -1,4 +1,4 @@
-use super::{PhaseEquilibrium, VLEOptions};
+use super::{PhaseEquilibrium, SolverOptions};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use num_dual::linalg::{norm, LU};
@@ -34,7 +34,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
         pressure: QuantityScalar<U>,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -58,7 +58,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
         temperature: QuantityScalar<U>,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -77,7 +77,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
         tp: TPSpec<U>,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -110,12 +110,12 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
         let (x_lim, vle_lim, bubble) = match vle_sat {
             [None, None] => return Err(EosError::SuperCritical()),
             [Some(vle2), None] => {
-                let cp = State::critical_point_binary(eos, tp, VLEOptions::default())?;
+                let cp = State::critical_point_binary(eos, tp, SolverOptions::default())?;
                 let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
                 ([0.0, cp.molefracs[0]], (vle2, cp_vle), bubble)
             }
             [None, Some(vle1)] => {
-                let cp = State::critical_point_binary(eos, tp, VLEOptions::default())?;
+                let cp = State::critical_point_binary(eos, tp, SolverOptions::default())?;
                 let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
                 ([1.0, cp.molefracs[0]], (vle1, cp_vle), bubble)
             }
@@ -145,7 +145,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
         npoints: usize,
         x_lle: (f64, f64),
         vle_sat: [Option<PhaseEquilibrium<U, E, 2>>; 2],
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<(
         Vec<PhaseEquilibrium<U, E, 2>>,
         Vec<PhaseEquilibrium<U, E, 2>>,
@@ -263,7 +263,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
                 p,
                 &feed,
                 vle.as_ref(),
-                VLEOptions::default(),
+                SolverOptions::default(),
                 None,
             )
             .ok();
@@ -313,7 +313,7 @@ fn iterate_vle<U: EosUnit, E: EquationOfState>(
     vle_1: Option<PhaseEquilibrium<U, E, 2>>,
     npoints: usize,
     bubble: bool,
-    bubble_dew_options: (VLEOptions, VLEOptions),
+    bubble_dew_options: (SolverOptions, SolverOptions),
 ) -> Vec<PhaseEquilibrium<U, E, 2>>
 where
     QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -393,7 +393,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
         min_temperature_lle: Option<QuantityScalar<U>>,
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -421,7 +421,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
         max_pressure_lle: Option<QuantityScalar<U>>,
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -444,7 +444,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
         tp_lim_lle: Option<QuantityScalar<U>>,
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -461,14 +461,14 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
                 eos,
                 t,
                 x_lle,
-                VLEOptions::default(),
+                SolverOptions::default(),
                 bubble_dew_options,
             ),
             TPSpec::Pressure(p) => PhaseEquilibrium::heteroazeotrope_p(
                 eos,
                 p,
                 x_lle,
-                VLEOptions::default(),
+                SolverOptions::default(),
                 bubble_dew_options,
             ),
         }?;
@@ -536,8 +536,8 @@ where
         eos: &Rc<E>,
         temperature: QuantityScalar<U>,
         x_init: (f64, f64),
-        options: VLEOptions,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        options: SolverOptions,
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
         // calculate initial values using bubble point
         let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
@@ -687,8 +687,8 @@ where
         eos: &Rc<E>,
         pressure: QuantityScalar<U>,
         x_init: (f64, f64),
-        options: VLEOptions,
-        bubble_dew_options: (VLEOptions, VLEOptions),
+        options: SolverOptions,
+        bubble_dew_options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self> {
         let p = pressure.to_reduced(U::reference_pressure())?;
 
