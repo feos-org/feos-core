@@ -1,4 +1,4 @@
-use super::{PhaseEquilibrium, VLEOptions, Verbosity};
+use super::{PhaseEquilibrium, SolverOptions, Verbosity};
 use crate::errors::{EosError, EosResult};
 use crate::state::{
     Contributions,
@@ -75,7 +75,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         pressure: Option<QuantityScalar<U>>,
         liquid_molefracs: &Array1<f64>,
         vapor_molefracs: Option<&Array1<f64>>,
-        options: (VLEOptions, VLEOptions),
+        options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -99,7 +99,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         temperature: Option<QuantityScalar<U>>,
         liquid_molefracs: &Array1<f64>,
         vapor_molefracs: Option<&Array1<f64>>,
-        options: (VLEOptions, VLEOptions),
+        options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -123,7 +123,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         pressure: Option<QuantityScalar<U>>,
         vapor_molefracs: &Array1<f64>,
         liquid_molefracs: Option<&Array1<f64>>,
-        options: (VLEOptions, VLEOptions),
+        options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -147,7 +147,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         temperature: Option<QuantityScalar<U>>,
         vapor_molefracs: &Array1<f64>,
         liquid_molefracs: Option<&Array1<f64>>,
-        options: (VLEOptions, VLEOptions),
+        options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -170,7 +170,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         molefracs_spec: &Array1<f64>,
         molefracs_init: Option<&Array1<f64>>,
         bubble: bool,
-        options: (VLEOptions, VLEOptions),
+        options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
@@ -259,7 +259,7 @@ fn bubble_dew<U: EosUnit, E: EquationOfState>(
     mut var_tp: TPSpec<U>,
     mut state1: State<U, E>,
     mut state2: State<U, E>,
-    options: (VLEOptions, VLEOptions),
+    options: (SolverOptions, SolverOptions),
 ) -> EosResult<PhaseEquilibrium<U, E, 2>>
 where
     QuantityScalar<U>: std::fmt::Display,

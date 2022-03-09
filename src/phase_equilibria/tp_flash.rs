@@ -1,4 +1,4 @@
-use super::{PhaseEquilibrium, VLEOptions, Verbosity};
+use super::{PhaseEquilibrium, SolverOptions, Verbosity};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
@@ -24,7 +24,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         pressure: QuantityScalar<U>,
         feed: &QuantityArray1<U>,
         init_vle_state: Option<&PhaseEquilibrium<U, E, 2>>,
-        options: VLEOptions,
+        options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> EosResult<Self> {
         State::new_npt(
@@ -49,7 +49,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     pub fn tp_flash(
         &self,
         init_vle_state: Option<&PhaseEquilibrium<U, E, 2>>,
-        options: VLEOptions,
+        options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> EosResult<PhaseEquilibrium<U, E, 2>> {
         // set options
@@ -297,7 +297,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     fn vle_init_stability(feed_state: &State<U, E>) -> EosResult<Self> {
-        let mut stable_states = feed_state.stability_analysis(VLEOptions::default())?;
+        let mut stable_states = feed_state.stability_analysis(SolverOptions::default())?;
         let state1 = stable_states.pop();
         let state2 = stable_states.pop();
         match (state1, state2) {

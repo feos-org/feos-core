@@ -1,4 +1,4 @@
-use super::{PhaseEquilibrium, VLEOptions, Verbosity};
+use super::{PhaseEquilibrium, SolverOptions, Verbosity};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State};
@@ -20,14 +20,14 @@ const ZERO_TPD: f64 = -1E-08;
 impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// Determine if the state is stable, i.e. if a phase split should
     /// occur or not.
-    pub fn is_stable(&self, options: VLEOptions) -> EosResult<bool> {
+    pub fn is_stable(&self, options: SolverOptions) -> EosResult<bool> {
         Ok(self.stability_analysis(options)?.is_empty())
     }
 
     /// Perform a stability analysis. The result is a list of [State]s with
     /// negative tangent plane distance (i.e. lower Gibbs energy) that can be
     /// used as initial estimates for a phase equilibrium calculation.
-    pub fn stability_analysis(&self, options: VLEOptions) -> EosResult<Vec<State<U, E>>> {
+    pub fn stability_analysis(&self, options: SolverOptions) -> EosResult<Vec<State<U, E>>> {
         let mut result = Vec::new();
         for i_trial in 0..self.eos.components() + 1 {
             let phase = if i_trial == self.eos.components() {
@@ -94,7 +94,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     fn minimize_tpd(
         &self,
         trial: &mut State<U, E>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<(Option<f64>, usize)> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MINIMIZE_KMAX, MINIMIZE_TOL);
         let mut newton = false;

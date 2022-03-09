@@ -37,7 +37,7 @@ pub use equation_of_state::{
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{
-    PhaseDiagramBinary, PhaseDiagramHetero, PhaseDiagramPure, PhaseEquilibrium, VLEOptions,
+    PhaseDiagramBinary, PhaseDiagramHetero, PhaseDiagramPure, PhaseEquilibrium, SolverOptions,
     Verbosity,
 };
 pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD};

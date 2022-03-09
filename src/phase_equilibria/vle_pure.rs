@@ -1,4 +1,4 @@
-use super::{PhaseEquilibrium, VLEOptions, Verbosity};
+use super::{PhaseEquilibrium, SolverOptions, Verbosity};
 use crate::density_iteration::pressure_spinodal;
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
@@ -21,7 +21,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         eos: &Rc<E>,
         temperature: QuantityScalar<U>,
         initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -155,7 +155,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         eos: &Rc<E>,
         pressure: QuantityScalar<U>,
         initial_state: Option<&Self>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -312,7 +312,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
             vle = Some(_vle);
         }
 
-        let cp = State::critical_point(eos, None, None, VLEOptions::default())?;
+        let cp = State::critical_point(eos, None, None, SolverOptions::default())?;
         if pressure > cp.pressure(Contributions::Total) {
             return Err(EosError::SuperCritical());
         };
@@ -376,7 +376,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Rc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, VLEOptions::default())
+                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, SolverOptions::default())
                     .map(|vle| vle.vapor().pressure(Contributions::Total))
                     .ok()
             })
@@ -395,7 +395,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Rc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_p(&pure_eos, pressure, None, VLEOptions::default())
+                PhaseEquilibrium::pure_p(&pure_eos, pressure, None, SolverOptions::default())
                     .map(|vle| vle.vapor().temperature)
                     .ok()
             })
@@ -427,7 +427,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Rc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, VLEOptions::default()).ok()
+                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, SolverOptions::default()).ok()
             })
             .collect()
     }
@@ -444,7 +444,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Rc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_p(&pure_eos, pressure, None, VLEOptions::default()).ok()
+                PhaseEquilibrium::pure_p(&pure_eos, pressure, None, SolverOptions::default()).ok()
             })
             .collect()
     }

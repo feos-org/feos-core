@@ -3,7 +3,7 @@
 //! a `target` which can be values from experimental data or
 //! other models.
 use crate::equation_of_state::{EquationOfState, MolarWeight};
-use crate::phase_equilibria::{PhaseEquilibrium, VLEOptions};
+use crate::phase_equilibria::{PhaseEquilibrium, SolverOptions};
 use crate::state::{DensityInitialization, State};
 use crate::utils::estimator::FitError;
 use crate::EosUnit;
@@ -148,7 +148,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let tc =
-            State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
+            State::critical_point(eos, None, Some(self.max_temperature), SolverOptions::default())
                 .unwrap()
                 .temperature;
 
@@ -176,7 +176,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let tc_inv = 1.0
-            / State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
+            / State::critical_point(eos, None, Some(self.max_temperature), SolverOptions::default())
                 .unwrap()
                 .temperature;
 
@@ -363,7 +363,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let tc =
-            State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
+            State::critical_point(eos, None, Some(self.max_temperature), SolverOptions::default())
                 .unwrap()
                 .temperature;
 
@@ -373,7 +373,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
             let t: QuantityScalar<U> = self.temperature.get(i);
             if t < tc {
                 let state: PhaseEquilibrium<U, E, 2> =
-                    PhaseEquilibrium::pure_t(eos, t, None, VLEOptions::default()).unwrap();
+                    PhaseEquilibrium::pure_t(eos, t, None, SolverOptions::default()).unwrap();
                 prediction
                     .try_set(i, state.liquid().mass_density())
                     .unwrap();
@@ -389,7 +389,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let tc =
-            State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
+            State::critical_point(eos, None, Some(self.max_temperature), SolverOptions::default())
                 .unwrap()
                 .temperature;
         let n_inv = 1.0 / self.datapoints as f64;
