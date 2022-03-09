@@ -3,7 +3,6 @@ use crate::joback::JobackRecord;
 use crate::parameter::{IdentifierOption, Parameter, ParameterError, PureRecord};
 use crate::python::joback::PyJobackRecord;
 use crate::python::parameter::{PyBinaryRecord, PyChemicalRecord, PyIdentifier};
-use crate::python::{PyContributions, PyVerbosity};
 use crate::*;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -25,10 +24,7 @@ impl PyPengRobinsonRecord {
     fn new(tc: f64, pc: f64, acentric_factor: f64) -> Self {
         Self(PengRobinsonRecord::new(tc, pc, acentric_factor))
     }
-}
 
-#[pyproto]
-impl pyo3::class::basic::PyObjectProtocol for PyPengRobinsonRecord {
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
     }
@@ -113,8 +109,8 @@ impl_vle_state!(PengRobinson, PyPengRobinson);
 #[pymodule]
 pub fn cubic(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyIdentifier>()?;
-    m.add_class::<PyVerbosity>()?;
-    m.add_class::<PyContributions>()?;
+    m.add_class::<Verbosity>()?;
+    m.add_class::<Contributions>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PyJobackRecord>()?;
 

@@ -17,6 +17,7 @@ pub(crate) enum Evaluate {
 
 /// Possible contributions that can be computed.
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Contributions {
     /// Only compute the ideal gas contribution
     IdealGas,

@@ -1,4 +1,4 @@
-use crate::python::{statehd::*, PyContributions, PyVerbosity};
+use crate::python::statehd::*;
 use crate::*;
 use ndarray::prelude::*;
 use num_dual::python::{PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64};
@@ -272,8 +272,8 @@ pub fn user_defined(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyStateD3D>()?;
     m.add_class::<PyStateD3DV2>()?;
     m.add_class::<PyStateD3DV3>()?;
-    m.add_class::<PyVerbosity>()?;
-    m.add_class::<PyContributions>()?;
+    m.add_class::<Verbosity>()?;
+    m.add_class::<Contributions>()?;
     m.add_class::<PyUserDefinedEos>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
