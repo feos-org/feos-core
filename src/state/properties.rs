@@ -615,13 +615,15 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 ///
 /// These properties are available for equations of state
 /// that implement the [EntropyScaling] trait.
-impl<U: EosUnit, E: EquationOfState + EntropyScaling<U, E>> State<U, E> {
+impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
     /// Return the viscosity via entropy scaling.
     pub fn viscosity(&self) -> EosResult<QuantityScalar<U>> {
         let s = self
             .molar_entropy(Contributions::Residual)
             .to_reduced(U::reference_molar_entropy())?;
-        Ok(self.eos.viscosity_reference(self)?
+        Ok(self
+            .eos
+            .viscosity_reference(self.temperature, self.volume, &self.moles)?
             * self.eos.viscosity_correlation(s, &self.molefracs)?.exp())
     }
 
@@ -638,7 +640,8 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U, E>> State<U, E> {
 
     /// Return the viscosity reference as used in entropy scaling.
     pub fn viscosity_reference(&self) -> EosResult<QuantityScalar<U>> {
-        self.eos.viscosity_reference(self)
+        self.eos
+            .viscosity_reference(self.temperature, self.volume, &self.moles)
     }
 
     /// Return the diffusion via entropy scaling.
@@ -646,7 +649,9 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U, E>> State<U, E> {
         let s = self
             .molar_entropy(Contributions::Residual)
             .to_reduced(U::reference_molar_entropy())?;
-        Ok(self.eos.diffusion_reference(self)?
+        Ok(self
+            .eos
+            .diffusion_reference(self.temperature, self.volume, &self.moles)?
             * self.eos.diffusion_correlation(s, &self.molefracs)?.exp())
     }
 
@@ -663,7 +668,8 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U, E>> State<U, E> {
 
     /// Return the diffusion reference as used in entropy scaling.
     pub fn diffusion_reference(&self) -> EosResult<QuantityScalar<U>> {
-        self.eos.diffusion_reference(self)
+        self.eos
+            .diffusion_reference(self.temperature, self.volume, &self.moles)
     }
 
     /// Return the thermal conductivity via entropy scaling.
@@ -671,7 +677,9 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U, E>> State<U, E> {
         let s = self
             .molar_entropy(Contributions::Residual)
             .to_reduced(U::reference_molar_entropy())?;
-        Ok(self.eos.thermal_conductivity_reference(self)?
+        Ok(self
+            .eos
+            .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)?
             * self
                 .eos
                 .thermal_conductivity_correlation(s, &self.molefracs)?
@@ -692,6 +700,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U, E>> State<U, E> {
 
     /// Return the thermal conductivity reference as used in entropy scaling.
     pub fn thermal_conductivity_reference(&self) -> EosResult<QuantityScalar<U>> {
-        self.eos.thermal_conductivity_reference(self)
+        self.eos
+            .thermal_conductivity_reference(self.temperature, self.volume, &self.moles)
     }
 }
