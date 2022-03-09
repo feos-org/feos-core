@@ -18,7 +18,7 @@ use std::rc::Rc;
 /// # use approx::assert_relative_eq;
 /// # fn main() -> EosResult<()> {
 /// // Create a state for given T,V,N
-/// let eos = Rc::new(PengRobinson::new(Rc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0]).unwrap())));
+/// let eos = Rc::new(PengRobinson::new(Rc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?)));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .volume(12.5 * METER.powi(3))
@@ -27,7 +27,7 @@ use std::rc::Rc;
 /// assert_eq!(state.density, 0.2 * MOL / METER.powi(3));
 ///
 /// // For a pure component, the composition does not need to be specified.
-/// let eos = Rc::new(PengRobinson::new(Rc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0]).unwrap())));
+/// let eos = Rc::new(PengRobinson::new(Rc::new(PengRobinsonParameters::new_simple(&[369.8], &[41.9 * 1e5], &[0.15], &[15.0])?)));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)
 ///                 .volume(12.5 * METER.powi(3))
@@ -42,7 +42,7 @@ use std::rc::Rc;
 ///         &[41.9 * 1e5, 48.2 * 1e5],
 ///         &[0.15, 0.10],
 ///         &[15.0, 30.0]
-///     ).unwrap())
+///     )?)
 /// ));
 /// let state = StateBuilder::new(&eos)
 ///                 .temperature(300.0 * KELVIN)

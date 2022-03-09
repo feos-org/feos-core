@@ -1,3 +1,4 @@
+use crate::parameter::ParameterError;
 use argmin::core::Error as ArgminError;
 use num_dual::linalg::LinAlgError;
 use quantity::QuantityError;
@@ -24,6 +25,8 @@ pub enum EosError {
     NoPhaseSplit,
     #[error(transparent)]
     QuantityError(#[from] QuantityError),
+    #[error(transparent)]
+    ParameterError(#[from] ParameterError),
     #[error(transparent)]
     ArgminError(#[from] ArgminError),
     #[error(transparent)]

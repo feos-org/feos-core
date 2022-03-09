@@ -171,7 +171,7 @@ mod tests {
     struct ModelRecord;
 
     #[test]
-    fn paper_example() {
+    fn paper_example() -> EosResult<()> {
         let segments_json = r#"[
         {
           "identifier": "-Cl",
@@ -226,8 +226,7 @@ mod tests {
             ],
             None,
         )
-        .segment_count(&segment_records)
-        .unwrap();
+        .segment_count(&segment_records)?;
         assert_eq!(segments.get(&segment_records[0]), Some(&2.0));
         assert_eq!(segments.get(&segment_records[1]), Some(&4.0));
         assert_eq!(segments.get(&segment_records[2]), Some(&2.0));
@@ -264,17 +263,16 @@ mod tests {
             1000.0 * KELVIN,
             1.0 * ANGSTROM.powi(3),
             &(arr1(&[1.0]) * MOL),
-        )
-        .unwrap();
+        )?;
         assert!(
             (state
                 .c_p(Contributions::IdealGas)
-                .to_reduced(JOULE / MOL / KELVIN)
-                .unwrap()
+                .to_reduced(JOULE / MOL / KELVIN)?
                 - 224.6)
                 .abs()
                 < 1.0
-        )
+        );
+        Ok(())
     }
 
     #[test]
