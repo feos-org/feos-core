@@ -132,7 +132,7 @@ macro_rules! impl_vle_state {
             /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature, pressure, feed, initial_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
+            #[pyo3(text_signature = "(eos, temperature, pressure, feed, init_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
             pub fn tp_flash(
                 eos: $py_eos,
                 temperature: PySINumber,
@@ -676,7 +676,7 @@ macro_rules! impl_vle_state {
             /// ------
             /// RuntimeError
             ///     When pressure iteration fails or no phase equilibrium is found.
-            #[pyo3(text_signature = "($self, initial_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
+            #[pyo3(text_signature = "($self, init_vle_state=None, max_iter=None, tol=None, verbosity=None, non_volatile_components=None)")]
             pub fn tp_flash(
                 &self,
                 init_vle_state: Option<&PyPhaseEquilibrium>,
