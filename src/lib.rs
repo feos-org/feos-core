@@ -6,6 +6,7 @@
 use quantity::si::*;
 use quantity::*;
 
+#[macro_export]
 macro_rules! log_iter {
     ($verbosity:expr, $($arg:tt)*) => {
         if $verbosity >= Verbosity::Iter {
@@ -14,6 +15,7 @@ macro_rules! log_iter {
     }
 }
 
+#[macro_export]
 macro_rules! log_result {
     ($verbosity:expr, $($arg:tt)*) => {
         if $verbosity >= Verbosity::Result {
