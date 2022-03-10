@@ -12,18 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Removed `State` from `EntropyScaling` trait and adjusted associated methods to use temperature, volume and moles instead of state. [#36](https://github.com/feos-org/feos-core/pull/36)
-<<<<<<< HEAD
 - Replaced the outer loop iterations for the critical point of binary systems with dedicated algorithms. [#34](https://github.com/feos-org/feos-core/pull/34)
-=======
 - Renamed `VLEOptions` to `SolverOptions`. [#38](https://github.com/feos-org/feos-core/pull/38)
 - Renamed methods of `StateBuilder` and the parameters in the `State` constructor in python to `molar_enthalpy`, `molar_entropy`, and `molar_internal_energy`.  [#35](https://github.com/feos-org/feos-core/pull/35)
 - Removed `PyContributions` and `PyVerbosity` in favor of a simpler implementation using `PyO3`'s new `#[pyclass]` for fieldless enums feature.  [#41](https://github.com/feos-org/feos-core/pull/41)
+- Renamed `Contributions::Residual` to `Contributions::ResidualNvt` and `Contributions::ResidualP` to `Contributions::ResidualNpt`. [#43](https://github.com/feos-org/feos-core/pull/43)
 
 ### Packaging
 - Updated `pyo3` and `numpy` dependencies to 0.16.
 - Updated `num-dual` dependency to 0.5.
 - Updated `quantity` dependency to 0.5.
->>>>>>> 589edd1 (udpate changleog and readme)
 
 ## [0.1.5] - 2022-02-21
 ### Fixed
