@@ -1,13 +1,11 @@
-use super::{Contributions, State, StateHD, TPSpec};
+use super::{State, StateHD, TPSpec};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::phase_equilibria::{SolverOptions, Verbosity};
 use crate::EosUnit;
-use argmin::prelude::{ArgminOp, Error, Executor};
-use argmin::solver::brent::Brent;
 use ndarray::{arr1, arr2, Array1, Array2};
 use num_dual::linalg::{norm, smallest_ev, LU};
-use num_dual::{Dual3, Dual64, DualNum, HyperDual};
+use num_dual::{Dual, Dual3, Dual64, DualNum, DualVec64, HyperDual, StaticVec};
 use num_traits::{One, Zero};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::rc::Rc;
@@ -38,47 +36,28 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             .collect()
     }
 
-    /// Calculate the critical point of a binary system for given temperature.
-    pub fn critical_point_binary_t(
-        eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
-        options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display,
-    {
-        Self::critical_point_binary(eos, TPSpec::Temperature(temperature), options)
-    }
-
-    /// Calculate the critical point of a binary system for given pressure.
-    pub fn critical_point_binary_p(
-        eos: &Rc<E>,
-        pressure: QuantityScalar<U>,
-        options: SolverOptions,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display,
-    {
-        Self::critical_point_binary(eos, TPSpec::Pressure(pressure), options)
-    }
-
     pub(crate) fn critical_point_binary(
         eos: &Rc<E>,
         tp: TPSpec<U>,
+        initial_temperature: Option<QuantityScalar<U>>,
+        initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display,
     {
-        let solver = Brent::new(1e-10, 1.0 - 1e-10, options.tol.unwrap_or(TOL_CRIT_POINT));
-        let cost = CritOp::new(eos, tp);
-        let x = Executor::new(cost, solver, 0.5)
-            .max_iters(options.max_iter.unwrap_or(MAX_ITER_CRIT_POINT) as u64)
-            .run()?
-            .state
-            .best_param;
-        let moles = arr1(&[x, 1.0 - x]) * U::reference_moles();
-        State::critical_point(eos, Some(&moles), None, SolverOptions::default())
+        match tp {
+            TPSpec::Temperature(t) => {
+                Self::critical_point_binary_t(eos, t, initial_molefracs, options)
+            }
+            TPSpec::Pressure(p) => Self::critical_point_binary_p(
+                eos,
+                p,
+                initial_temperature,
+                initial_molefracs,
+                options,
+            ),
+        }
     }
 
     /// Calculate the critical point of a system for given moles.
@@ -194,6 +173,191 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         }
         Err(EosError::NotConverged(String::from("Critical point")))
     }
+
+    /// Calculate the critical point of a binary system for given temperature.
+    pub fn critical_point_binary_t(
+        eos: &Rc<E>,
+        temperature: QuantityScalar<U>,
+        initial_molefracs: Option<[f64; 2]>,
+        options: SolverOptions,
+    ) -> EosResult<Self>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
+
+        let t = temperature.to_reduced(U::reference_temperature())?;
+        let x = StaticVec::new_vec(initial_molefracs.unwrap_or([0.5, 0.5]));
+        let max_density = eos
+            .max_density(Some(&(arr1(x.raw_array()) * U::reference_moles())))?
+            .to_reduced(U::reference_density())?;
+        let mut rho = x * 0.3 * max_density;
+
+        log_iter!(
+            verbosity,
+            " iter |    residual    |      density 1       |      density 2       "
+        );
+        log_iter!(verbosity, "{:-<69}", "");
+        log_iter!(
+            verbosity,
+            " {:4} |                | {:12.8} | {:12.8}",
+            0,
+            rho[0] * U::reference_density(),
+            rho[1] * U::reference_density(),
+        );
+
+        for i in 1..=max_iter {
+            // calculate residuals and derivatives w.r.t. partial densities
+            let r = StaticVec::new_vec([DualVec64::from_re(rho[0]), DualVec64::from_re(rho[1])])
+                .derive();
+            let res = critical_point_objective_t(eos, t, r)?;
+
+            // calculate Newton step
+            let h = res.jacobian();
+            let res = res.map(|r| r.re);
+            let mut delta = StaticVec::new_vec([
+                h[(1, 1)] * res[0] - h[(0, 1)] * res[1],
+                h[(0, 0)] * res[1] - h[(1, 0)] * res[0],
+            ]) / (h[(0, 0)] * h[(1, 1)] - h[(0, 1)] * h[(1, 0)]);
+
+            // reduce step if necessary
+            for i in 0..2 {
+                if delta[i].abs() > 0.03 * max_density {
+                    delta *= 0.03 * max_density / delta[i].abs()
+                }
+            }
+
+            // apply step
+            rho -= delta;
+            rho[0] = f64::max(rho[0], 1e-4 * max_density);
+            rho[1] = f64::max(rho[1], 1e-4 * max_density);
+
+            log_iter!(
+                verbosity,
+                " {:4} | {:14.8e} | {:12.8} | {:12.8}",
+                i,
+                res.norm(),
+                rho[0] * U::reference_density(),
+                rho[1] * U::reference_density(),
+            );
+
+            // check convergence
+            if res.norm() < tol {
+                log_result!(
+                    verbosity,
+                    "Critical point calculation converged in {} step(s)\n",
+                    i
+                );
+                return State::new_nvt(
+                    eos,
+                    t * U::reference_temperature(),
+                    U::reference_volume(),
+                    &(arr1(rho.raw_array()) * U::reference_moles()),
+                );
+            }
+        }
+        Err(EosError::NotConverged(String::from("Critical point")))
+    }
+
+    /// Calculate the critical point of a binary system for given pressure.
+    pub fn critical_point_binary_p(
+        eos: &Rc<E>,
+        pressure: QuantityScalar<U>,
+        initial_temperature: Option<QuantityScalar<U>>,
+        initial_molefracs: Option<[f64; 2]>,
+        options: SolverOptions,
+    ) -> EosResult<Self>
+    where
+        QuantityScalar<U>: std::fmt::Display,
+    {
+        let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_CRIT_POINT, TOL_CRIT_POINT);
+
+        let p = pressure.to_reduced(U::reference_pressure())?;
+        let mut t = initial_temperature
+            .map(|t| t.to_reduced(U::reference_temperature()))
+            .transpose()?
+            .unwrap_or(300.0);
+        let x = StaticVec::new_vec(initial_molefracs.unwrap_or([0.5, 0.5]));
+        let max_density = eos
+            .max_density(Some(&(arr1(x.raw_array()) * U::reference_moles())))?
+            .to_reduced(U::reference_density())?;
+        let mut rho = x * 0.3 * max_density;
+
+        log_iter!(
+            verbosity,
+            " iter |    residual    |   temperature   |      density 1       |      density 2       "
+        );
+        log_iter!(verbosity, "{:-<87}", "");
+        log_iter!(
+            verbosity,
+            " {:4} |                | {:13.8} | {:12.8} | {:12.8}",
+            0,
+            t * U::reference_temperature(),
+            rho[0] * U::reference_density(),
+            rho[1] * U::reference_density(),
+        );
+
+        for i in 1..=max_iter {
+            // calculate residuals and derivatives w.r.t. temperature and partial densities
+            let x = StaticVec::new_vec([
+                DualVec64::from_re(t),
+                DualVec64::from_re(rho[0]),
+                DualVec64::from_re(rho[1]),
+            ])
+            .derive();
+            let r = StaticVec::new_vec([x[1], x[2]]);
+            let res = critical_point_objective_p(eos, p, x[0], r)?;
+
+            // calculate Newton step
+            let h = arr2(res.jacobian().raw_data());
+            let res = arr1(res.map(|r| r.re).raw_array());
+            let mut delta = LU::new(h)?.solve(&res);
+
+            // reduce step if necessary
+            if delta[0].abs() > 0.25 * t {
+                delta *= 0.25 * t / delta[0].abs()
+            }
+            if delta[1].abs() > 0.03 * max_density {
+                delta *= 0.03 * max_density / delta[1].abs()
+            }
+            if delta[2].abs() > 0.03 * max_density {
+                delta *= 0.03 * max_density / delta[2].abs()
+            }
+
+            // apply step
+            t -= delta[0];
+            rho[0] -= delta[1];
+            rho[1] -= delta[2];
+            rho[0] = f64::max(rho[0], 1e-4 * max_density);
+            rho[1] = f64::max(rho[1], 1e-4 * max_density);
+
+            log_iter!(
+                verbosity,
+                " {:4} | {:14.8e} | {:13.8} | {:12.8} | {:12.8}",
+                i,
+                norm(&res),
+                t * U::reference_temperature(),
+                rho[0] * U::reference_density(),
+                rho[1] * U::reference_density(),
+            );
+
+            // check convergence
+            if norm(&res) < tol {
+                log_result!(
+                    verbosity,
+                    "Critical point calculation converged in {} step(s)\n",
+                    i
+                );
+                return State::new_nvt(
+                    eos,
+                    t * U::reference_temperature(),
+                    U::reference_volume(),
+                    &(arr1(rho.raw_array()) * U::reference_moles()),
+                );
+            }
+        }
+        Err(EosError::NotConverged(String::from("Critical point")))
+    }
 }
 
 pub fn critical_point_objective<E: EquationOfState>(
@@ -236,40 +400,84 @@ pub fn critical_point_objective<E: EquationOfState>(
     Ok(arr1(&[eval, res.v3]))
 }
 
-struct CritOp<U: EosUnit, E: EquationOfState> {
-    eos: Rc<E>,
-    tp: TPSpec<U>,
+fn critical_point_objective_t<E: EquationOfState>(
+    eos: &Rc<E>,
+    temperature: f64,
+    density: StaticVec<DualVec64<2>, 2>,
+) -> EosResult<StaticVec<DualVec64<2>, 2>> {
+    // calculate second partial derivatives w.r.t. moles
+    let t = HyperDual::from(temperature);
+    let v = HyperDual::from(1.0);
+    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+        let mut m = density.map(HyperDual::from_re);
+        m[i].eps1[0] = DualVec64::one();
+        m[j].eps2[0] = DualVec64::one();
+        let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
+        (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
+            + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
+            * (density[i] * density[j]).sqrt()
+    });
+
+    // calculate smallest eigenvalue and corresponding eigenvector of q
+    let (eval, evec) = smallest_ev(qij);
+
+    // evaluate third partial derivative w.r.t. s
+    let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
+        Dual3::new(
+            density[i],
+            evec[i] * density[i].sqrt(),
+            DualVec64::zero(),
+            DualVec64::zero(),
+        )
+    });
+    let state_s = StateHD::new(Dual3::from(temperature), Dual3::from(1.0), moles_hd);
+    let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
+    Ok(StaticVec::new_vec([eval, res.v3]))
 }
 
-impl<U: EosUnit, E: EquationOfState> CritOp<U, E> {
-    fn new(eos: &Rc<E>, tp: TPSpec<U>) -> Self {
-        Self {
-            eos: eos.clone(),
-            tp,
-        }
-    }
-}
+fn critical_point_objective_p<E: EquationOfState>(
+    eos: &Rc<E>,
+    pressure: f64,
+    temperature: DualVec64<3>,
+    density: StaticVec<DualVec64<3>, 2>,
+) -> EosResult<StaticVec<DualVec64<3>, 3>> {
+    // calculate second partial derivatives w.r.t. moles
+    let t = HyperDual::from_re(temperature);
+    let v = HyperDual::from(1.0);
+    let qij = Array2::from_shape_fn((eos.components(), eos.components()), |(i, j)| {
+        let mut m = density.map(HyperDual::from_re);
+        m[i].eps1[0] = DualVec64::one();
+        m[j].eps2[0] = DualVec64::one();
+        let state = StateHD::new(t, v, arr1(&[m[0], m[1]]));
+        (eos.evaluate_residual(&state).eps1eps2[(0, 0)]
+            + eos.ideal_gas().evaluate(&state).eps1eps2[(0, 0)])
+            * (density[i] * density[j]).sqrt()
+    });
 
-impl<U: EosUnit, E: EquationOfState> ArgminOp for CritOp<U, E>
-where
-    QuantityScalar<U>: std::fmt::Display,
-{
-    type Param = f64;
-    type Output = f64;
-    type Jacobian = ();
-    type Hessian = ();
-    type Float = f64;
+    // calculate smallest eigenvalue and corresponding eigenvector of q
+    let (eval, evec) = smallest_ev(qij);
 
-    fn apply(&self, p: &Self::Param) -> Result<Self::Output, Error> {
-        let moles = arr1(&[*p, 1.0 - *p]) * U::reference_moles();
-        let state = State::critical_point(&self.eos, Some(&moles), None, SolverOptions::default())?;
-        match self.tp {
-            TPSpec::Pressure(p) => Ok(
-                (state.pressure(Contributions::Total) - p).to_reduced(U::reference_pressure())?
-            ),
-            TPSpec::Temperature(t) => {
-                Ok((state.temperature - t).to_reduced(U::reference_temperature())?)
-            }
-        }
-    }
+    // evaluate third partial derivative w.r.t. s
+    let moles_hd = Array1::from_shape_fn(eos.components(), |i| {
+        Dual3::new(
+            density[i],
+            evec[i] * density[i].sqrt(),
+            DualVec64::zero(),
+            DualVec64::zero(),
+        )
+    });
+    let state_s = StateHD::new(Dual3::from_re(temperature), Dual3::from(1.0), moles_hd);
+    let res = eos.evaluate_residual(&state_s) + eos.ideal_gas().evaluate(&state_s);
+
+    // calculate pressure
+    let v = Dual::from(1.0).derive();
+    let m = arr1(&[Dual::from_re(density[0]), Dual::from_re(density[1])]);
+    let state_p = StateHD::new(Dual::from_re(temperature), v, m);
+    let p = eos.evaluate_residual(&state_p) + eos.ideal_gas().evaluate(&state_p);
+
+    Ok(StaticVec::new_vec([
+        eval,
+        res.v3,
+        p.eps[0] * temperature + pressure,
+    ]))
 }

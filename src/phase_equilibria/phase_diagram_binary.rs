@@ -1,10 +1,10 @@
 use super::{PhaseEquilibrium, SolverOptions};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
-use num_dual::linalg::{norm, LU};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
 use crate::EosUnit;
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
+use num_dual::linalg::{norm, LU};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::rc::Rc;
 
@@ -110,12 +110,14 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
         let (x_lim, vle_lim, bubble) = match vle_sat {
             [None, None] => return Err(EosError::SuperCritical()),
             [Some(vle2), None] => {
-                let cp = State::critical_point_binary(eos, tp, SolverOptions::default())?;
+                let cp =
+                    State::critical_point_binary(eos, tp, None, None, SolverOptions::default())?;
                 let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
                 ([0.0, cp.molefracs[0]], (vle2, cp_vle), bubble)
             }
             [None, Some(vle1)] => {
-                let cp = State::critical_point_binary(eos, tp, SolverOptions::default())?;
+                let cp =
+                    State::critical_point_binary(eos, tp, None, None, SolverOptions::default())?;
                 let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
                 ([1.0, cp.molefracs[0]], (vle1, cp_vle), bubble)
             }

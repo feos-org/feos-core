@@ -1,7 +1,7 @@
 use crate::StateHD;
 use ndarray::Array1;
 use num_dual::python::{PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64};
-use num_dual::{Dual3, Dual3_64, Dual64, HyperDual, HyperDual64};
+use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualVec64, HyperDual, HyperDual64};
 use pyo3::prelude::*;
 use std::convert::From;
 
@@ -35,6 +35,26 @@ impl From<StateHD<HyperDual<Dual64, f64>>> for PyStateHDD {
     }
 }
 
+#[pyclass(name = "StateHDDV2")]
+#[derive(Clone)]
+pub struct PyStateHDDV2(StateHD<HyperDual<DualVec64<2>, f64>>);
+
+impl From<StateHD<HyperDual<DualVec64<2>, f64>>> for PyStateHDDV2 {
+    fn from(s: StateHD<HyperDual<DualVec64<2>, f64>>) -> Self {
+        Self(s)
+    }
+}
+
+#[pyclass(name = "StateHDDV3")]
+#[derive(Clone)]
+pub struct PyStateHDDV3(StateHD<HyperDual<DualVec64<3>, f64>>);
+
+impl From<StateHD<HyperDual<DualVec64<3>, f64>>> for PyStateHDDV3 {
+    fn from(s: StateHD<HyperDual<DualVec64<3>, f64>>) -> Self {
+        Self(s)
+    }
+}
+
 #[pyclass(name = "StateD")]
 #[derive(Clone)]
 pub struct PyStateD(StateHD<Dual64>);
@@ -45,7 +65,17 @@ impl From<StateHD<Dual64>> for PyStateD {
     }
 }
 
-#[pyclass(name = "StateHD3")]
+#[pyclass(name = "StateDDV3")]
+#[derive(Clone)]
+pub struct PyStateDDV3(StateHD<Dual<DualVec64<3>, f64>>);
+
+impl From<StateHD<Dual<DualVec64<3>, f64>>> for PyStateDDV3 {
+    fn from(s: StateHD<Dual<DualVec64<3>, f64>>) -> Self {
+        Self(s)
+    }
+}
+
+#[pyclass(name = "StateD3")]
 #[derive(Clone)]
 pub struct PyStateD3(StateHD<Dual3_64>);
 
@@ -55,12 +85,32 @@ impl From<StateHD<Dual3_64>> for PyStateD3 {
     }
 }
 
-#[pyclass(name = "StateHD3D")]
+#[pyclass(name = "StateD3D")]
 #[derive(Clone)]
 pub struct PyStateD3D(StateHD<Dual3<Dual64, f64>>);
 
 impl From<StateHD<Dual3<Dual64, f64>>> for PyStateD3D {
     fn from(s: StateHD<Dual3<Dual64, f64>>) -> Self {
+        Self(s)
+    }
+}
+
+#[pyclass(name = "StateD3DV2")]
+#[derive(Clone)]
+pub struct PyStateD3DV2(StateHD<Dual3<DualVec64<2>, f64>>);
+
+impl From<StateHD<Dual3<DualVec64<2>, f64>>> for PyStateD3DV2 {
+    fn from(s: StateHD<Dual3<DualVec64<2>, f64>>) -> Self {
+        Self(s)
+    }
+}
+
+#[pyclass(name = "StateD3DV3")]
+#[derive(Clone)]
+pub struct PyStateD3DV3(StateHD<Dual3<DualVec64<3>, f64>>);
+
+impl From<StateHD<Dual3<DualVec64<3>, f64>>> for PyStateD3DV3 {
+    fn from(s: StateHD<Dual3<DualVec64<3>, f64>>) -> Self {
         Self(s)
     }
 }
