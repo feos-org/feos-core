@@ -5,7 +5,7 @@
 
 Core traits and functionalities for the `feos` project.
 
-The crate makes use of [generalized (hyper-) dual numbers](https://github.com/itt-ustutt/num-dual) to generically calcualte exact partial derivatives from Helmholtz energy equations of state. The derivatives are used to calculate
+The crate makes use of [generalized (hyper-) dual numbers](https://github.com/itt-ustutt/num-dual) to generically calculate exact partial derivatives from Helmholtz energy equations of state. The derivatives are used to calculate
 - **properties**,
 - **critical points**,
 - and **phase equilibria**.
