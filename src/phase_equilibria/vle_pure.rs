@@ -260,7 +260,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         let density = 0.75 * eos.max_density(None)?;
         let liquid = State::new_nvt(eos, temperature, U::reference_moles() / density, &m)?;
         let z = liquid.compressibility(Contributions::Total);
-        let mu = liquid.chemical_potential(Contributions::Residual);
+        let mu = liquid.chemical_potential(Contributions::ResidualNvt);
         let p = temperature
             * density
             * U::gas_constant()
@@ -427,7 +427,8 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Rc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, SolverOptions::default()).ok()
+                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, SolverOptions::default())
+                    .ok()
             })
             .collect()
     }
