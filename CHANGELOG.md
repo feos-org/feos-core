@@ -8,14 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2022-03-09
 ### Added
-- Added conversions between `ParameterError` -> `EosError` and `EosError` -> `FitError` to improve the error messages in some cases.  [#40](https://github.com/feos-org/feos-core/pull/40)
+- Added conversions between `ParameterError` -> `EosError` and `EosError` -> `FitError` to improve the error messages in some cases. [#40](https://github.com/feos-org/feos-core/pull/40)
 
 ### Changed
 - Removed `State` from `EntropyScaling` trait and adjusted associated methods to use temperature, volume and moles instead of state. [#36](https://github.com/feos-org/feos-core/pull/36)
 - Replaced the outer loop iterations for the critical point of binary systems with dedicated algorithms. [#34](https://github.com/feos-org/feos-core/pull/34)
 - Renamed `VLEOptions` to `SolverOptions`. [#38](https://github.com/feos-org/feos-core/pull/38)
 - Renamed methods of `StateBuilder` and the parameters in the `State` constructor in python to `molar_enthalpy`, `molar_entropy`, and `molar_internal_energy`.  [#35](https://github.com/feos-org/feos-core/pull/35)
-- Removed `PyContributions` and `PyVerbosity` in favor of a simpler implementation using `PyO3`'s new `#[pyclass]` for fieldless enums feature.  [#41](https://github.com/feos-org/feos-core/pull/41)
+- Removed `PyContributions` and `PyVerbosity` in favor of a simpler implementation using `PyO3`'s new `#[pyclass]` for fieldless enums feature. [#41](https://github.com/feos-org/feos-core/pull/41)
 - Renamed `Contributions::Residual` to `Contributions::ResidualNvt` and `Contributions::ResidualP` to `Contributions::ResidualNpt`. [#43](https://github.com/feos-org/feos-core/pull/43)
 
 ### Packaging
