@@ -43,13 +43,13 @@ macro_rules! impl_vle_state {
                 initial_state: Option<&PyPhaseEquilibrium>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 Ok(Self(PhaseEquilibrium::pure_t(
                     &eos.0,
                     temperature.into(),
                     initial_state.and_then(|s| Some(&s.0)),
-                    (max_iter, tol, verbosity.map(|v| v.0)).into(),
+                    (max_iter, tol, verbosity).into(),
                 )?))
             }
 
@@ -88,13 +88,13 @@ macro_rules! impl_vle_state {
                 initial_state: Option<&PyPhaseEquilibrium>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 Ok(Self(PhaseEquilibrium::pure_p(
                     &eos.0,
                     pressure.into(),
                     initial_state.and_then(|s| Some(&s.0)),
-                    (max_iter, tol, verbosity.map(|v| v.0)).into(),
+                    (max_iter, tol, verbosity).into(),
                 )?))
             }
 
@@ -141,7 +141,7 @@ macro_rules! impl_vle_state {
                 init_vle_state: Option<&PyPhaseEquilibrium>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
                 non_volatile_components: Option<Vec<usize>>,
             ) -> PyResult<Self> {
                 Ok(Self(PhaseEquilibrium::tp_flash(
@@ -150,7 +150,7 @@ macro_rules! impl_vle_state {
                     pressure.into(),
                     feed,
                     init_vle_state.and_then(|s| Some(&s.0)),
-                    (max_iter, tol, verbosity.map(|v| v.0)).into(), non_volatile_components
+                    (max_iter, tol, verbosity).into(), non_volatile_components
                 )?))
             }
 
@@ -195,7 +195,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let x = vapor_molefracs.and_then(|m| Some(m.to_owned_array()));
                 Ok(Self(PhaseEquilibrium::bubble_point_tx(
@@ -205,8 +205,8 @@ macro_rules! impl_vle_state {
                     &liquid_molefracs.to_owned_array(),
                     x.as_ref(),
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into()
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into()
                     )
                 )?))
             }
@@ -252,7 +252,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let x = vapor_molefracs.and_then(|m| Some(m.to_owned_array()));
                 Ok(Self(PhaseEquilibrium::bubble_point_px(
@@ -262,8 +262,8 @@ macro_rules! impl_vle_state {
                     &liquid_molefracs.to_owned_array(),
                     x.as_ref(),
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into()
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into()
                     )
                 )?))
             }
@@ -309,7 +309,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let x = liquid_molefracs.and_then(|m| Some(m.to_owned_array()));
                 Ok(Self(PhaseEquilibrium::dew_point_tx(
@@ -319,8 +319,8 @@ macro_rules! impl_vle_state {
                     &vapor_molefracs.to_owned_array(),
                     x.as_ref(),
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into()
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into()
                     )
                 )?))
             }
@@ -366,7 +366,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let x = liquid_molefracs.and_then(|m| Some(m.to_owned_array()));
                 Ok(Self(PhaseEquilibrium::dew_point_px(
@@ -376,8 +376,8 @@ macro_rules! impl_vle_state {
                     &vapor_molefracs.to_owned_array(),
                     x.as_ref(),
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into()
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into()
                     )
                 )?))
             }
@@ -498,10 +498,7 @@ macro_rules! impl_vle_state {
             fn _repr_markdown_(&self) -> String {
                 self.0._repr_markdown_()
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PyPhaseEquilibrium {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }
@@ -549,21 +546,21 @@ macro_rules! impl_vle_state {
                 x_init: (f64, f64),
                 max_iter: Option<usize>,
                 tol: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
                 max_iter_bd_inner: Option<usize>,
                 max_iter_bd_outer: Option<usize>,
                 tol_bd_inner: Option<f64>,
                 tol_bd_outer: Option<f64>,
-                verbosity_bd: Option<PyVerbosity>,
+                verbosity_bd: Option<Verbosity>,
             ) -> PyResult<PyThreePhaseEquilibrium> {
                 Ok(PyThreePhaseEquilibrium(PhaseEquilibrium::heteroazeotrope_t(
                     &eos.0,
                     temperature.into(),
                     x_init,
-                    (max_iter, tol, verbosity.map(|v| v.0)).into(),
+                    (max_iter, tol, verbosity).into(),
                     (
-                        (max_iter_bd_inner, tol_bd_inner, verbosity_bd.map(|v| v.0)).into(),
-                        (max_iter_bd_outer, tol_bd_outer, verbosity_bd.map(|v| v.0)).into(),
+                        (max_iter_bd_inner, tol_bd_inner, verbosity_bd).into(),
+                        (max_iter_bd_outer, tol_bd_outer, verbosity_bd).into(),
                     )
                 )?))
             }
@@ -603,21 +600,21 @@ macro_rules! impl_vle_state {
                 x_init: (f64, f64),
                 max_iter: Option<usize>,
                 tol: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
                 max_iter_bd_inner: Option<usize>,
                 max_iter_bd_outer: Option<usize>,
                 tol_bd_inner: Option<f64>,
                 tol_bd_outer: Option<f64>,
-                verbosity_bd: Option<PyVerbosity>,
+                verbosity_bd: Option<Verbosity>,
             ) -> PyResult<PyThreePhaseEquilibrium> {
                 Ok(PyThreePhaseEquilibrium(PhaseEquilibrium::heteroazeotrope_p(
                     &eos.0,
                     pressure.into(),
                     x_init,
-                    (max_iter, tol, verbosity.map(|v| v.0)).into(),
+                    (max_iter, tol, verbosity).into(),
                     (
-                        (max_iter_bd_inner, tol_bd_inner, verbosity_bd.map(|v| v.0)).into(),
-                        (max_iter_bd_outer, tol_bd_outer, verbosity_bd.map(|v| v.0)).into(),
+                        (max_iter_bd_inner, tol_bd_inner, verbosity_bd).into(),
+                        (max_iter_bd_outer, tol_bd_outer, verbosity_bd).into(),
                     )
                 )?))
             }
@@ -643,10 +640,7 @@ macro_rules! impl_vle_state {
             fn _repr_markdown_(&self) -> String {
                 self.0._repr_markdown_()
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PyThreePhaseEquilibrium {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }
@@ -682,12 +676,12 @@ macro_rules! impl_vle_state {
                 init_vle_state: Option<&PyPhaseEquilibrium>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
                 non_volatile_components: Option<Vec<usize>>,
             ) -> PyResult<PyPhaseEquilibrium> {
                 Ok(PyPhaseEquilibrium(self.0.tp_flash(
                     init_vle_state.and_then(|s| Some(&s.0)),
-                    (max_iter, tol, verbosity.map(|v| v.0)).into(),
+                    (max_iter, tol, verbosity).into(),
                     non_volatile_components
                 )?))
             }
@@ -731,14 +725,14 @@ macro_rules! impl_vle_state {
                 critical_temperature: Option<PySINumber>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let dia = PhaseDiagramPure::new(
                     &eos.0,
                     min_temperature.into(),
                     npoints,
                     critical_temperature.map(|t| t.into()),
-                    (max_iter, tol, verbosity.map(|v| v.0)).into(),
+                    (max_iter, tol, verbosity).into(),
                 )?;
                 Ok(Self(dia))
             }
@@ -866,7 +860,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let dia = PhaseDiagramBinary::new_txy(
                     &eos.0,
@@ -874,8 +868,8 @@ macro_rules! impl_vle_state {
                     npoints,
                     x_lle,
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into(),
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into(),
                     )
                 )?;
                 Ok(Self(dia))
@@ -919,7 +913,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let dia = PhaseDiagramBinary::new_pxy(
                     &eos.0,
@@ -927,8 +921,8 @@ macro_rules! impl_vle_state {
                     npoints,
                     x_lle,
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into(),
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into(),
                     )
                 )?;
                 Ok(Self(dia))
@@ -1097,7 +1091,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let dia = PhaseDiagramHetero::new_txy(
                     &eos.0,
@@ -1107,8 +1101,8 @@ macro_rules! impl_vle_state {
                     npoints_vle,
                     npoints_lle,
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into(),
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into(),
                     )
                 )?;
                 Ok(Self(dia))
@@ -1159,7 +1153,7 @@ macro_rules! impl_vle_state {
                 max_iter_outer: Option<usize>,
                 tol_inner: Option<f64>,
                 tol_outer: Option<f64>,
-                verbosity: Option<PyVerbosity>,
+                verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
                 let dia = PhaseDiagramHetero::new_pxy(
                     &eos.0,
@@ -1169,8 +1163,8 @@ macro_rules! impl_vle_state {
                     npoints_vle,
                     npoints_lle,
                     (
-                        (max_iter_inner, tol_inner, verbosity.map(|v| v.0)).into(),
-                        (max_iter_outer, tol_outer, verbosity.map(|v| v.0)).into(),
+                        (max_iter_inner, tol_inner, verbosity).into(),
+                        (max_iter_outer, tol_outer, verbosity).into(),
                     )
                 )?;
                 Ok(Self(dia))

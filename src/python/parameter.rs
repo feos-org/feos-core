@@ -111,10 +111,7 @@ impl PyIdentifier {
     fn set_formula(&mut self, formula: &str) {
         self.0.formula = Some(formula.to_string());
     }
-}
 
-#[pyproto]
-impl pyo3::class::basic::PyObjectProtocol for PyIdentifier {
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
     }
@@ -205,10 +202,7 @@ impl PyChemicalRecord {
                 .to_object(py),
         }
     }
-}
 
-#[pyproto]
-impl pyo3::class::basic::PyObjectProtocol for PyChemicalRecord {
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
     }
@@ -271,10 +265,7 @@ impl PyBinaryRecord {
     fn set_model_record(&mut self, model_record: f64) {
         self.0.model_record = model_record;
     }
-}
 
-#[pyproto]
-impl pyo3::class::basic::PyObjectProtocol for PyBinaryRecord {
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
     }
@@ -337,10 +328,7 @@ impl PyBinarySegmentRecord {
     fn set_model_record(&mut self, model_record: f64) {
         self.0.model_record = model_record;
     }
-}
 
-#[pyproto]
-impl pyo3::class::basic::PyObjectProtocol for PyBinarySegmentRecord {
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
     }
@@ -428,10 +416,7 @@ macro_rules! impl_pure_record {
             fn set_ideal_gas_record(&mut self, ideal_gas_record: $py_ideal_gas_record) {
                 self.0.ideal_gas_record = Some(ideal_gas_record.0);
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PyPureRecord {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }
@@ -540,10 +525,7 @@ macro_rules! impl_segment_record {
             fn set_ideal_gas_record(&mut self, ideal_gas_record: $py_ideal_gas_record) {
                 self.0.ideal_gas_record = Some(ideal_gas_record.0);
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PySegmentRecord {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }

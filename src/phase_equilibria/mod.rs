@@ -18,6 +18,7 @@ pub use phase_diagram_pure::PhaseDiagramPure;
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Verbosity {
     /// Do not print output.
     None,

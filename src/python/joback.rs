@@ -38,10 +38,7 @@ impl PyJobackRecord {
     fn new(a: f64, b: f64, c: f64, d: f64, e: f64) -> Self {
         Self(JobackRecord::new(a, b, c, d, e))
     }
-}
 
-#[pyproto]
-impl pyo3::class::basic::PyObjectProtocol for PyJobackRecord {
     fn __repr__(&self) -> PyResult<String> {
         Ok(self.0.to_string())
     }

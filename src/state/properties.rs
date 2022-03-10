@@ -17,13 +17,14 @@ pub(crate) enum Evaluate {
 
 /// Possible contributions that can be computed.
 #[derive(Clone, Copy)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Contributions {
     /// Only compute the ideal gas contribution
     IdealGas,
     /// Only compute the difference between the total and the ideal gas contribution
-    Residual,
+    ResidualNvt,
     /// Compute the differnce between the total and the ideal gas contribution for a (N,p,T) reference state
-    ResidualP,
+    ResidualNpt,
     /// Compute ideal gas and residual contributions
     Total,
 }
@@ -143,14 +144,14 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         match contributions {
             Contributions::IdealGas => f(self, Evaluate::IdealGas),
             Contributions::Total => f(self, Evaluate::Total),
-            Contributions::Residual => {
+            Contributions::ResidualNvt => {
                 if additive {
                     f(self, Evaluate::Residual)
                 } else {
                     f(self, Evaluate::Total) - f(self, Evaluate::IdealGas)
                 }
             }
-            Contributions::ResidualP => {
+            Contributions::ResidualNpt => {
                 let p = self.pressure_(Evaluate::Total);
                 let state_p = Self::new_nvt(
                     &self.eos,
@@ -292,7 +293,8 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 
     /// Logarithm of the fugacity coefficient: $\ln\varphi_i=\beta\mu_i^\mathrm{res}\left(T,p,\lbrace N_i\rbrace\right)$
     pub fn ln_phi(&self) -> Array1<f64> {
-        (self.chemical_potential(Contributions::ResidualP) / (U::gas_constant() * self.temperature))
+        (self.chemical_potential(Contributions::ResidualNpt)
+            / (U::gas_constant() * self.temperature))
             .into_value()
             .unwrap()
     }
@@ -304,18 +306,18 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                 - s.chemical_potential_(evaluate) / self.temperature)
                 / (U::gas_constant() * self.temperature)
         };
-        self.evaluate_property(func, Contributions::ResidualP, false)
+        self.evaluate_property(func, Contributions::ResidualNpt, false)
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. pressure: $\left(\frac{\partial\ln\varphi_i}{\partial p}\right)_{T,N_i}$
     pub fn dln_phi_dp(&self) -> QuantityArray1<U> {
-        self.molar_volume(Contributions::ResidualP) / (U::gas_constant() * self.temperature)
+        self.molar_volume(Contributions::ResidualNpt) / (U::gas_constant() * self.temperature)
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. moles: $\left(\frac{\partial\ln\varphi_i}{\partial N_j}\right)_{T,p,N_k}$
     pub fn dln_phi_dnj(&self) -> QuantityArray2<U> {
         let n = self.eos.components();
-        let dmu_dni = self.dmu_dni(Contributions::Residual);
+        let dmu_dni = self.dmu_dni(Contributions::ResidualNvt);
         let dp_dni = self.dp_dni(Contributions::Total);
         let dp_dv = self.dp_dv(Contributions::Total);
         let dp_dn_2 = QuantityArray::from_shape_fn((n, n), |(i, j)| dp_dni.get(i) * dp_dni.get(j));
@@ -619,7 +621,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
     /// Return the viscosity via entropy scaling.
     pub fn viscosity(&self) -> EosResult<QuantityScalar<U>> {
         let s = self
-            .molar_entropy(Contributions::Residual)
+            .molar_entropy(Contributions::ResidualNvt)
             .to_reduced(U::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -633,7 +635,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
     /// that is used for entropy scaling.
     pub fn ln_viscosity_reduced(&self) -> EosResult<f64> {
         let s = self
-            .molar_entropy(Contributions::Residual)
+            .molar_entropy(Contributions::ResidualNvt)
             .to_reduced(U::reference_molar_entropy())?;
         self.eos.viscosity_correlation(s, &self.molefracs)
     }
@@ -647,7 +649,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
     /// Return the diffusion via entropy scaling.
     pub fn diffusion(&self) -> EosResult<QuantityScalar<U>> {
         let s = self
-            .molar_entropy(Contributions::Residual)
+            .molar_entropy(Contributions::ResidualNvt)
             .to_reduced(U::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -661,7 +663,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
     /// that is used for entropy scaling.
     pub fn ln_diffusion_reduced(&self) -> EosResult<f64> {
         let s = self
-            .molar_entropy(Contributions::Residual)
+            .molar_entropy(Contributions::ResidualNvt)
             .to_reduced(U::reference_molar_entropy())?;
         self.eos.diffusion_correlation(s, &self.molefracs)
     }
@@ -675,7 +677,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
     /// Return the thermal conductivity via entropy scaling.
     pub fn thermal_conductivity(&self) -> EosResult<QuantityScalar<U>> {
         let s = self
-            .molar_entropy(Contributions::Residual)
+            .molar_entropy(Contributions::ResidualNvt)
             .to_reduced(U::reference_molar_entropy())?;
         Ok(self
             .eos
@@ -692,7 +694,7 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
     /// that is used for entropy scaling.
     pub fn ln_thermal_conductivity_reduced(&self) -> EosResult<f64> {
         let s = self
-            .molar_entropy(Contributions::Residual)
+            .molar_entropy(Contributions::ResidualNvt)
             .to_reduced(U::reference_molar_entropy())?;
         self.eos
             .thermal_conductivity_correlation(s, &self.molefracs)
