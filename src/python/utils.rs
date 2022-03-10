@@ -236,10 +236,7 @@ macro_rules! impl_estimator {
             fn get_datapoints(&self) -> usize {
                 self.0.datapoints()
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PyDataSet {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }
@@ -385,10 +382,7 @@ macro_rules! impl_estimator {
             fn _repr_markdown_(&self) -> String {
                 self.0._repr_markdownn_()
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PyEstimator {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }
