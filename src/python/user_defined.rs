@@ -1,8 +1,8 @@
-use crate::python::{statehd::*, PyContributions, PyVerbosity};
+use crate::python::statehd::*;
 use crate::*;
 use ndarray::prelude::*;
 use num_dual::python::{PyDual3Dual64, PyDual3_64, PyDual64, PyHyperDual64, PyHyperDualDual64};
-use num_dual::{Dual3, Dual3_64, Dual64, HyperDual, HyperDual64};
+use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualVec64, HyperDual, HyperDual64};
 use numpy::convert::{IntoPyArray, ToPyArray};
 use numpy::{PyArray1, PyArray2};
 use pyo3::exceptions::PyValueError;
@@ -183,11 +183,74 @@ impl fmt::Display for PyHelmholtzEnergy {
     }
 }
 
+#[pyclass(name = "DualDualVec64_2")]
+#[derive(Clone)]
+pub struct PyDualDualVec64_3(Dual<DualVec64<3>, f64>);
+
+impl From<PyDualDualVec64_3> for Dual<DualVec64<3>, f64> {
+    fn from(value: PyDualDualVec64_3) -> Self {
+        value.0
+    }
+}
+
+#[pyclass(name = "HyperDualDualVec64_2")]
+#[derive(Clone)]
+pub struct PyHyperDualDualVec64_2(HyperDual<DualVec64<2>, f64>);
+
+impl From<PyHyperDualDualVec64_2> for HyperDual<DualVec64<2>, f64> {
+    fn from(value: PyHyperDualDualVec64_2) -> Self {
+        value.0
+    }
+}
+
+#[pyclass(name = "HyperDualDualVec64_3")]
+#[derive(Clone)]
+pub struct PyHyperDualDualVec64_3(HyperDual<DualVec64<3>, f64>);
+
+impl From<PyHyperDualDualVec64_3> for HyperDual<DualVec64<3>, f64> {
+    fn from(value: PyHyperDualDualVec64_3) -> Self {
+        value.0
+    }
+}
+
+#[pyclass(name = "Dual3DualVec64_2")]
+#[derive(Clone)]
+pub struct PyDual3DualVec64_2(Dual3<DualVec64<2>, f64>);
+
+impl From<PyDual3DualVec64_2> for Dual3<DualVec64<2>, f64> {
+    fn from(value: PyDual3DualVec64_2) -> Self {
+        value.0
+    }
+}
+
+#[pyclass(name = "Dual3DualVec64_3")]
+#[derive(Clone)]
+pub struct PyDual3DualVec64_3(Dual3<DualVec64<3>, f64>);
+
+impl From<PyDual3DualVec64_3> for Dual3<DualVec64<3>, f64> {
+    fn from(value: PyDual3DualVec64_3) -> Self {
+        value.0
+    }
+}
+
 impl_helmholtz_energy!(PyStateD, PyDual64, Dual64);
+impl_helmholtz_energy!(PyStateDDV3, PyDualDualVec64_3, Dual<DualVec64<3>, f64>);
 impl_helmholtz_energy!(PyStateHD, PyHyperDual64, HyperDual64);
 impl_helmholtz_energy!(PyStateHDD, PyHyperDualDual64, HyperDual<Dual64, f64>);
+impl_helmholtz_energy!(
+    PyStateHDDV2,
+    PyHyperDualDualVec64_2,
+    HyperDual<DualVec64<2>, f64>
+);
+impl_helmholtz_energy!(
+    PyStateHDDV3,
+    PyHyperDualDualVec64_3,
+    HyperDual<DualVec64<3>, f64>
+);
 impl_helmholtz_energy!(PyStateD3, PyDual3_64, Dual3_64);
 impl_helmholtz_energy!(PyStateD3D, PyDual3Dual64, Dual3<Dual64, f64>);
+impl_helmholtz_energy!(PyStateD3DV2, PyDual3DualVec64_2, Dual3<DualVec64<2>, f64>);
+impl_helmholtz_energy!(PyStateD3DV3, PyDual3DualVec64_3, Dual3<DualVec64<3>, f64>);
 impl_helmholtz_energy!(PyStateF, f64, f64);
 
 impl_equation_of_state!(PyUserDefinedEos);
@@ -200,12 +263,17 @@ impl_vle_state!(PyEoSObj, PyUserDefinedEos);
 pub fn user_defined(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyStateHD>()?;
     m.add_class::<PyStateD>()?;
+    m.add_class::<PyStateDDV3>()?;
     m.add_class::<PyStateD3>()?;
     m.add_class::<PyStateF>()?;
     m.add_class::<PyStateHDD>()?;
+    m.add_class::<PyStateHDDV2>()?;
+    m.add_class::<PyStateHDDV3>()?;
     m.add_class::<PyStateD3D>()?;
-    m.add_class::<PyVerbosity>()?;
-    m.add_class::<PyContributions>()?;
+    m.add_class::<PyStateD3DV2>()?;
+    m.add_class::<PyStateD3DV3>()?;
+    m.add_class::<Verbosity>()?;
+    m.add_class::<Contributions>()?;
     m.add_class::<PyUserDefinedEos>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyPhaseEquilibrium>()?;

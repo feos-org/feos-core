@@ -3,7 +3,7 @@
 use super::dataset::*;
 use super::Loss;
 use crate::equation_of_state::EquationOfState;
-use crate::EosUnit;
+use crate::{EosError, EosUnit};
 use ndarray::{arr1, concatenate, Array1, ArrayView1, Axis};
 use quantity::{QuantityArray1, QuantityError, QuantityScalar};
 use std::fmt;
@@ -26,6 +26,8 @@ pub enum FitError {
     ParseError(#[from] ParseFloatError),
     #[error(transparent)]
     QuantityError(#[from] QuantityError),
+    #[error(transparent)]
+    EosError(#[from] EosError),
 }
 
 /// A collection of [`DataSet`]s and weights that can be used to

@@ -1,4 +1,4 @@
-use super::{PhaseEquilibrium, VLEOptions};
+use super::{PhaseEquilibrium, SolverOptions};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::EosResult;
 use crate::state::{Contributions, State};
@@ -20,14 +20,14 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramPure<U, E> {
         min_temperature: QuantityScalar<U>,
         npoints: usize,
         critical_temperature: Option<QuantityScalar<U>>,
-        options: VLEOptions,
+        options: SolverOptions,
     ) -> EosResult<Self>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let mut states = Vec::with_capacity(npoints);
 
-        let sc = State::critical_point(eos, None, critical_temperature, VLEOptions::default())?;
+        let sc = State::critical_point(eos, None, critical_temperature, SolverOptions::default())?;
 
         let max_temperature = min_temperature
             + (sc.temperature - min_temperature) * ((npoints - 2) as f64 / (npoints - 1) as f64);

@@ -18,6 +18,7 @@ pub use phase_diagram_pure::PhaseDiagramPure;
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Verbosity {
     /// Do not print output.
     None,
@@ -38,7 +39,7 @@ impl Default for Verbosity {
 /// If the values are [None], solver specific default
 ///  values are used.
 #[derive(Copy, Clone, Default)]
-pub struct VLEOptions {
+pub struct SolverOptions {
     /// Maximum number of iterations.
     pub max_iter: Option<usize>,
     /// Tolerance.
@@ -47,7 +48,7 @@ pub struct VLEOptions {
     pub verbosity: Verbosity,
 }
 
-impl From<(Option<usize>, Option<f64>, Option<Verbosity>)> for VLEOptions {
+impl From<(Option<usize>, Option<f64>, Option<Verbosity>)> for SolverOptions {
     fn from(options: (Option<usize>, Option<f64>, Option<Verbosity>)) -> Self {
         Self {
             max_iter: options.0,
@@ -57,7 +58,7 @@ impl From<(Option<usize>, Option<f64>, Option<Verbosity>)> for VLEOptions {
     }
 }
 
-impl VLEOptions {
+impl SolverOptions {
     pub fn new() -> Self {
         Self::default()
     }

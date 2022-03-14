@@ -1,4 +1,4 @@
-use argmin::core::Error as ArgminError;
+use crate::parameter::ParameterError;
 use num_dual::linalg::LinAlgError;
 use quantity::QuantityError;
 use thiserror::Error;
@@ -25,7 +25,7 @@ pub enum EosError {
     #[error(transparent)]
     QuantityError(#[from] QuantityError),
     #[error(transparent)]
-    ArgminError(#[from] ArgminError),
+    ParameterError(#[from] ParameterError),
     #[error(transparent)]
     LinAlgError(#[from] LinAlgError),
 }

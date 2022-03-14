@@ -3,7 +3,7 @@
 //! a `target` which can be values from experimental data or
 //! other models.
 use crate::equation_of_state::{EquationOfState, MolarWeight};
-use crate::phase_equilibria::{PhaseEquilibrium, VLEOptions};
+use crate::phase_equilibria::{PhaseEquilibrium, SolverOptions};
 use crate::state::{DensityInitialization, State};
 use crate::utils::estimator::FitError;
 use crate::{Contributions, EosUnit};
@@ -100,8 +100,7 @@ impl<U: EosUnit> VaporPressure<U> {
     ) -> Result<Self, FitError> {
         let datapoints = target.len();
         let max_temperature = temperature
-            .to_reduced(U::reference_temperature())
-            .unwrap()
+            .to_reduced(U::reference_temperature())?
             .into_iter()
             .reduce(|a, b| a.max(b))
             .unwrap()
@@ -148,7 +147,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let critical_point =
-            State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
+            State::critical_point(eos, None, Some(self.max_temperature), SolverOptions::default())
                 .unwrap();
         let tc = critical_point.temperature;
         let pc = critical_point.pressure(Contributions::Total);
@@ -182,14 +181,18 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let tc_inv = 1.0
-            / State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
-                .unwrap()
-                .temperature;
+            / State::critical_point(
+                eos,
+                None,
+                Some(self.max_temperature),
+                SolverOptions::default(),
+            )?
+            .temperature;
 
-        let reduced_temperatures = (0..self.datapoints)
-            .map(|i| (self.temperature.get(i) * tc_inv).into_value().unwrap())
+        let reduced_temperatures: Result<_, _> = (0..self.datapoints)
+            .map(|i| (self.temperature.get(i) * tc_inv).into_value())
             .collect();
-        let mut weights = self.weight_from_std(&reduced_temperatures);
+        let mut weights = self.weight_from_std(&reduced_temperatures?);
         weights /= weights.sum();
 
         let prediction = &self.predict(eos)?;
@@ -199,8 +202,7 @@ impl<U: EosUnit, E: EquationOfState> DataSet<U, E> for VaporPressure<U> {
                 cost[i] = weights[i]
                     * 5.0
                     * (self.temperature.get(i) - 1.0 / tc_inv)
-                        .to_reduced(U::reference_temperature())
-                        .unwrap();
+                        .to_reduced(U::reference_temperature())?;
             } else {
                 cost[i] = weights[i]
                     * ((self.target.get(i) - prediction.get(i)) / self.target.get(i))
@@ -281,9 +283,9 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E> for LiquidDe
                 DensityInitialization::Liquid,
             );
             if let Ok(s) = state {
-                prediction.try_set(i, s.mass_density()).unwrap();
+                prediction.try_set(i, s.mass_density())?;
             } else {
-                prediction.try_set(i, 1.0e10 * unit).unwrap();
+                prediction.try_set(i, 1.0e10 * unit)?;
             }
         }
         Ok(prediction)
@@ -328,8 +330,7 @@ impl<U: EosUnit> EquilibriumLiquidDensity<U> {
     ) -> Result<Self, FitError> {
         let datapoints = target.len();
         let max_temperature = temperature
-            .to_reduced(U::reference_temperature())
-            .unwrap()
+            .to_reduced(U::reference_temperature())?
             .into_iter()
             .reduce(|a, b| a.max(b))
             .unwrap()
@@ -368,10 +369,13 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
-        let tc =
-            State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
-                .unwrap()
-                .temperature;
+        let tc = State::critical_point(
+            eos,
+            None,
+            Some(self.max_temperature),
+            SolverOptions::default(),
+        )?
+        .temperature;
 
         let unit = self.target.get(0);
         let mut prediction = Array1::zeros(self.datapoints) * unit;
@@ -379,12 +383,10 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
             let t: QuantityScalar<U> = self.temperature.get(i);
             if t < tc {
                 let state: PhaseEquilibrium<U, E, 2> =
-                    PhaseEquilibrium::pure_t(eos, t, None, VLEOptions::default()).unwrap();
-                prediction
-                    .try_set(i, state.liquid().mass_density())
-                    .unwrap();
+                    PhaseEquilibrium::pure_t(eos, t, None, SolverOptions::default())?;
+                prediction.try_set(i, state.liquid().mass_density())?;
             } else {
-                prediction.try_set(i, f64::NAN * unit).unwrap();
+                prediction.try_set(i, f64::NAN * unit)?;
             }
         }
         Ok(prediction)
@@ -394,10 +396,13 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
-        let tc =
-            State::critical_point(eos, None, Some(self.max_temperature), VLEOptions::default())
-                .unwrap()
-                .temperature;
+        let tc = State::critical_point(
+            eos,
+            None,
+            Some(self.max_temperature),
+            SolverOptions::default(),
+        )?
+        .temperature;
         let n_inv = 1.0 / self.datapoints as f64;
         let prediction = &self.predict(eos)?;
         let mut cost = Array1::zeros(self.datapoints);
@@ -405,9 +410,7 @@ impl<U: EosUnit, E: EquationOfState + MolarWeight<U>> DataSet<U, E>
             if prediction.get(i).is_nan() {
                 cost[i] = n_inv
                     * 5.0
-                    * (self.temperature.get(i) - tc)
-                        .to_reduced(U::reference_temperature())
-                        .unwrap();
+                    * (self.temperature.get(i) - tc).to_reduced(U::reference_temperature())?;
             } else {
                 cost[i] = n_inv
                     * ((self.target.get(i) - prediction.get(i)) / self.target.get(i))

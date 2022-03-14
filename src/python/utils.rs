@@ -178,15 +178,12 @@ macro_rules! impl_estimator {
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 std_parameters: Option<Vec<f64>>,
-            ) -> Self {
-                Self(Rc::new(
-                    VaporPressure::<SIUnit>::new(
-                        target.clone().into(),
-                        temperature.clone().into(),
-                        std_parameters.unwrap_or(vec![0.0, 0.0, 0.0]),
-                    )
-                    .unwrap(),
-                ))
+            ) -> PyResult<Self> {
+                Ok(Self(Rc::new(VaporPressure::<SIUnit>::new(
+                    target.clone().into(),
+                    temperature.clone().into(),
+                    std_parameters.unwrap_or(vec![0.0, 0.0, 0.0]),
+                )?)))
             }
 
             /// Create a DataSet with experimental data for liquid density.
@@ -217,15 +214,12 @@ macro_rules! impl_estimator {
                 target: &PySIArray1,
                 temperature: &PySIArray1,
                 pressure: &PySIArray1,
-            ) -> Self {
-                Self(Rc::new(
-                    LiquidDensity::<SIUnit>::new(
-                        target.clone().into(),
-                        temperature.clone().into(),
-                        pressure.clone().into(),
-                    )
-                    .unwrap(),
-                ))
+            ) -> PyResult<Self> {
+                Ok(Self(Rc::new(LiquidDensity::<SIUnit>::new(
+                    target.clone().into(),
+                    temperature.clone().into(),
+                    pressure.clone().into(),
+                )?)))
             }
 
             /// Create a DataSet with experimental data for liquid density
@@ -251,14 +245,14 @@ macro_rules! impl_estimator {
             /// eos_python.saft.estimator.DataSet.relative_difference
             #[staticmethod]
             #[pyo3(text_signature = "(target, temperature)")]
-            fn equilibrium_liquid_density(target: &PySIArray1, temperature: &PySIArray1) -> Self {
-                Self(Rc::new(
-                    EquilibriumLiquidDensity::<SIUnit>::new(
-                        target.clone().into(),
-                        temperature.clone().into(),
-                    )
-                    .unwrap(),
-                ))
+            fn equilibrium_liquid_density(
+                target: &PySIArray1,
+                temperature: &PySIArray1,
+            ) -> PyResult<Self> {
+                Ok(Self(Rc::new(EquilibriumLiquidDensity::<SIUnit>::new(
+                    target.clone().into(),
+                    temperature.clone().into(),
+                )?)))
             }
 
             /// Return `input` as ``Dict[str, SIArray1]``.
@@ -282,10 +276,7 @@ macro_rules! impl_estimator {
             fn get_datapoints(&self) -> usize {
                 self.0.datapoints()
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PyDataSet {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }
@@ -434,10 +425,7 @@ macro_rules! impl_estimator {
             fn _repr_markdown_(&self) -> String {
                 self.0._repr_markdownn_()
             }
-        }
 
-        #[pyproto]
-        impl pyo3::class::basic::PyObjectProtocol for PyEstimator {
             fn __repr__(&self) -> PyResult<String> {
                 Ok(self.0.to_string())
             }

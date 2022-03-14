@@ -1,8 +1,8 @@
-use crate::{Contributions, EosError, Verbosity};
+use crate::EosError;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3::{wrap_pymodule, PyErr};
-use quantity::python::PyInit_quantity;
+use quantity::python::__PYO3_PYMODULE_DEF_QUANTITY;
 
 mod cubic;
 mod equation_of_state;
@@ -14,83 +14,8 @@ mod statehd;
 mod user_defined;
 mod utils;
 
-pub use cubic::PyInit_cubic;
-pub use user_defined::PyInit_user_defined;
-
-/// Helmholtz energy contributions to consider
-/// when computing a property.
-#[pyclass(name = "Contributions")]
-#[derive(Copy, Clone)]
-pub struct PyContributions(pub Contributions);
-
-#[pymethods]
-impl PyContributions {
-    /// Only compute ideal gas contribution.
-    #[classattr]
-    #[allow(non_snake_case)]
-    pub fn IdealGas() -> Self {
-        Self(Contributions::IdealGas)
-    }
-
-    /// Only compute residual contribution with respect
-    /// to an ideal gas contribution which is defined at
-    /// T, V, {n}.
-    ///
-    /// See also
-    /// --------
-    /// ResidualP: to use an ideal gas reference defined at T, p, {n}
-    #[classattr]
-    #[allow(non_snake_case)]
-    pub fn Residual() -> Self {
-        Self(Contributions::Residual)
-    }
-
-    /// Only compute residual contribution with respect
-    /// to an ideal gas contribution which is defined at
-    /// T, p, {n}.
-    ///
-    /// See also
-    /// --------
-    /// Residual: to use an ideal gas reference defined at T, V, {n}
-    #[classattr]
-    #[allow(non_snake_case)]
-    pub fn ResidualP() -> Self {
-        Self(Contributions::ResidualP)
-    }
-
-    /// Compute all contributions
-    ///
-    /// Note
-    /// ----
-    /// This is the default for most properties.
-    #[classattr]
-    #[allow(non_snake_case)]
-    pub fn Total() -> Self {
-        Self(Contributions::Total)
-    }
-}
-
-/// Verbosity levels for iterative solvers.
-#[pyclass(name = "Verbosity")]
-#[derive(Copy, Clone)]
-pub struct PyVerbosity(pub Verbosity);
-
-#[pymethods]
-impl PyVerbosity {
-    /// Print a status message at the end of the iteration.
-    #[classattr]
-    #[allow(non_snake_case)]
-    pub fn Result() -> Self {
-        Self(Verbosity::Result)
-    }
-
-    /// Print a detailed progress of the iteration.
-    #[classattr]
-    #[allow(non_snake_case)]
-    pub fn Iter() -> Self {
-        Self(Verbosity::Iter)
-    }
-}
+pub use cubic::__PYO3_PYMODULE_DEF_CUBIC;
+pub use user_defined::__PYO3_PYMODULE_DEF_USER_DEFINED;
 
 impl From<EosError> for PyErr {
     fn from(e: EosError) -> PyErr {

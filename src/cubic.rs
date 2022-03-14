@@ -254,7 +254,7 @@ impl MolarWeight<SIUnit> for PengRobinson {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::phase_equilibria::VLEOptions;
+    use crate::phase_equilibria::SolverOptions;
     use crate::state::State;
     use crate::Contributions;
     use crate::{EosResult, Verbosity};
@@ -309,7 +309,7 @@ mod tests {
         let parameters =
             PengRobinsonParameters::from_records(vec![propane.clone()], Array2::zeros((1, 1)));
         let pr = Rc::new(PengRobinson::new(Rc::new(parameters)));
-        let options = VLEOptions::new().verbosity(Verbosity::Iter);
+        let options = SolverOptions::new().verbosity(Verbosity::Iter);
         let cp = State::critical_point(&pr, None, None, options)?;
         println!("{} {}", cp.temperature, cp.pressure(Contributions::Total));
         assert_relative_eq!(cp.temperature, tc * KELVIN, max_relative = 1e-4);

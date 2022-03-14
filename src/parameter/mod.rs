@@ -61,7 +61,7 @@ where
         Self::from_records(pure_records, binary_record)
     }
 
-    /// Return the original pure and binary records that werde used to construct the parameters.
+    /// Return the original pure and binary records that were used to construct the parameters.
     #[allow(clippy::type_complexity)]
     fn records(
         &self,
@@ -200,8 +200,7 @@ where
         // empty, if no binary segment records are provided
         let binary_map: HashMap<_, _> = binary_segment_records
             .into_iter()
-            .map(|seg| seg.into_iter())
-            .flatten()
+            .flat_map(|seg| seg.into_iter())
             .map(|br| ((br.id1, br.id2), br.model_record))
             .collect();
 

@@ -1,8 +1,8 @@
 use crate::errors::{EosError, EosResult};
-use crate::state::{State, StateHD};
+use crate::state::StateHD;
 use crate::EosUnit;
 use ndarray::prelude::*;
-use num_dual::{Dual3, Dual3_64, Dual64, DualNum, HyperDual, HyperDual64};
+use num_dual::{Dual, Dual3, Dual3_64, Dual64, DualNum, DualVec64, HyperDual, HyperDual64};
 use num_traits::{One, Zero};
 use quantity::{QuantityArray1, QuantityScalar};
 use std::fmt;
@@ -26,10 +26,15 @@ pub trait HelmholtzEnergyDual<D: DualNum<f64>> {
 pub trait HelmholtzEnergy:
     HelmholtzEnergyDual<f64>
     + HelmholtzEnergyDual<Dual64>
+    + HelmholtzEnergyDual<Dual<DualVec64<3>, f64>>
     + HelmholtzEnergyDual<HyperDual64>
     + HelmholtzEnergyDual<Dual3_64>
     + HelmholtzEnergyDual<HyperDual<Dual64, f64>>
+    + HelmholtzEnergyDual<HyperDual<DualVec64<2>, f64>>
+    + HelmholtzEnergyDual<HyperDual<DualVec64<3>, f64>>
     + HelmholtzEnergyDual<Dual3<Dual64, f64>>
+    + HelmholtzEnergyDual<Dual3<DualVec64<2>, f64>>
+    + HelmholtzEnergyDual<Dual3<DualVec64<3>, f64>>
     + fmt::Display
 {
 }
@@ -37,10 +42,15 @@ pub trait HelmholtzEnergy:
 impl<T> HelmholtzEnergy for T where
     T: HelmholtzEnergyDual<f64>
         + HelmholtzEnergyDual<Dual64>
+        + HelmholtzEnergyDual<Dual<DualVec64<3>, f64>>
         + HelmholtzEnergyDual<HyperDual64>
         + HelmholtzEnergyDual<Dual3_64>
         + HelmholtzEnergyDual<HyperDual<Dual64, f64>>
+        + HelmholtzEnergyDual<HyperDual<DualVec64<2>, f64>>
+        + HelmholtzEnergyDual<HyperDual<DualVec64<3>, f64>>
         + HelmholtzEnergyDual<Dual3<Dual64, f64>>
+        + HelmholtzEnergyDual<Dual3<DualVec64<2>, f64>>
+        + HelmholtzEnergyDual<Dual3<DualVec64<3>, f64>>
         + fmt::Display
 {
 }
@@ -83,10 +93,15 @@ pub trait IdealGasContributionDual<D: DualNum<f64>> {
 pub trait IdealGasContribution:
     IdealGasContributionDual<f64>
     + IdealGasContributionDual<Dual64>
+    + IdealGasContributionDual<Dual<DualVec64<3>, f64>>
     + IdealGasContributionDual<HyperDual64>
     + IdealGasContributionDual<Dual3_64>
     + IdealGasContributionDual<HyperDual<Dual64, f64>>
+    + IdealGasContributionDual<HyperDual<DualVec64<2>, f64>>
+    + IdealGasContributionDual<HyperDual<DualVec64<3>, f64>>
     + IdealGasContributionDual<Dual3<Dual64, f64>>
+    + IdealGasContributionDual<Dual3<DualVec64<2>, f64>>
+    + IdealGasContributionDual<Dual3<DualVec64<3>, f64>>
     + fmt::Display
 {
 }
@@ -94,15 +109,20 @@ pub trait IdealGasContribution:
 impl<T> IdealGasContribution for T where
     T: IdealGasContributionDual<f64>
         + IdealGasContributionDual<Dual64>
+        + IdealGasContributionDual<Dual<DualVec64<3>, f64>>
         + IdealGasContributionDual<HyperDual64>
         + IdealGasContributionDual<Dual3_64>
         + IdealGasContributionDual<HyperDual<Dual64, f64>>
+        + IdealGasContributionDual<HyperDual<DualVec64<2>, f64>>
+        + IdealGasContributionDual<HyperDual<DualVec64<3>, f64>>
         + IdealGasContributionDual<Dual3<Dual64, f64>>
+        + IdealGasContributionDual<Dual3<DualVec64<2>, f64>>
+        + IdealGasContributionDual<Dual3<DualVec64<3>, f64>>
         + fmt::Display
 {
 }
 
-struct DefaultIdealGasContribution();
+struct DefaultIdealGasContribution;
 impl<D: DualNum<f64>> IdealGasContributionDual<D> for DefaultIdealGasContribution {
     fn de_broglie_wavelength(&self, _: D, components: usize) -> Array1<D> {
         Array1::zeros(components)
@@ -185,7 +205,7 @@ pub trait EquationOfState {
     /// required (e.g. for the calculation of enthalpies) this function
     /// has to be overwritten.
     fn ideal_gas(&self) -> &dyn IdealGasContribution {
-        &DefaultIdealGasContribution()
+        &DefaultIdealGasContribution
     }
 
     /// Check if the provided optional mole number is consistent with the
@@ -295,11 +315,26 @@ pub trait EquationOfState {
 }
 
 /// Reference values and residual entropy correlations for entropy scaling.
-pub trait EntropyScaling<U: EosUnit, E: EquationOfState> {
-    fn viscosity_reference(&self, state: &State<U, E>) -> EosResult<QuantityScalar<U>>;
+pub trait EntropyScaling<U: EosUnit> {
+    fn viscosity_reference(
+        &self,
+        temperature: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+    ) -> EosResult<QuantityScalar<U>>;
     fn viscosity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
-    fn diffusion_reference(&self, state: &State<U, E>) -> EosResult<QuantityScalar<U>>;
+    fn diffusion_reference(
+        &self,
+        temperature: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+    ) -> EosResult<QuantityScalar<U>>;
     fn diffusion_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
-    fn thermal_conductivity_reference(&self, state: &State<U, E>) -> EosResult<QuantityScalar<U>>;
+    fn thermal_conductivity_reference(
+        &self,
+        temperature: QuantityScalar<U>,
+        volume: QuantityScalar<U>,
+        moles: &QuantityArray1<U>,
+    ) -> EosResult<QuantityScalar<U>>;
     fn thermal_conductivity_correlation(&self, s_res: f64, x: &Array1<f64>) -> EosResult<f64>;
 }
