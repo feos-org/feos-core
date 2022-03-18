@@ -32,7 +32,6 @@ pub mod joback;
 pub mod parameter;
 mod phase_equilibria;
 mod state;
-pub mod utils;
 pub use equation_of_state::{
     EntropyScaling, EquationOfState, HelmholtzEnergy, HelmholtzEnergyDual, IdealGasContribution,
     IdealGasContributionDual, MolarWeight,
