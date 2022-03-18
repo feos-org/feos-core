@@ -525,6 +525,29 @@ macro_rules! impl_state {
                 self.0.ln_phi().view().to_pyarray(py)
             }
 
+            /// Return logarithmic pure substance fugacity coefficient.
+            /// 
+            /// For each component, the hypothetical liquid fugacity coefficient
+            /// at mixture temperature and pressure is computed.
+            /// 
+            /// Returns
+            /// -------
+            /// numpy.ndarray
+            #[pyo3(text_signature = "($self)")]
+            fn ln_phi_pure<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+                Ok(self.0.ln_phi_pure()?.view().to_pyarray(py))
+            }
+
+            /// Return logarithmic symmetric activity coefficient.
+            /// 
+            /// Returns
+            /// -------
+            /// numpy.ndarray
+            #[pyo3(text_signature = "($self)")]
+            fn ln_symmetric_activity_coefficient<'py>(&self, py: Python<'py>) -> PyResult<&'py PyArray1<f64>> {
+                Ok(self.0.ln_symmetric_activity_coefficient()?.view().to_pyarray(py))
+            }
+
             /// Return derivative of logarithmic fugacity coefficient w.r.t. temperature.
             ///
             /// Returns

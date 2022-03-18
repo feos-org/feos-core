@@ -314,9 +314,17 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
                     &(arr1(&[1.0]) * U::reference_moles()),
                     crate::DensityInitialization::Liquid,
                 )?;
-                state.ln_phi()[0]
+                Ok(state.ln_phi()[0])
             })
             .collect()
+    }
+
+    /// Activity coefficient $\ln \gamma_i = \ln \varphi_i(T, p, \mathbf{N}) - \ln \varphi_i(T, p)$
+    pub fn ln_symmetric_activity_coefficient(&self) -> EosResult<Array1<f64>> {
+        match self.eos.components() {
+            1 => Ok(arr1(&[0.0])),
+            _ => Ok(self.ln_phi() - &self.ln_phi_pure()?),
+        }
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. temperature: $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,N_i}$
@@ -488,11 +496,6 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         -(U::gas_constant() * self.temperature * self.density)
             .to_reduced(self.volume * self.dp_dv(Contributions::Total))
             .unwrap()
-    }
-
-    /// Activity coefficient $\ln \gamma_i = \ln \varphi_i(T, p, \mathbf{N}) - \ln \varphi_i(T, p)$
-    pub fn ln_symmetric_activity_coefficient(&self) -> Array1<f64> {
-        self.ln_phi() - self.ln_phi_pure()
     }
 
     /// Helmholtz energy $A$ evaluated for each contribution of the equation of state.
