@@ -10,7 +10,6 @@ mod phase_equilibria;
 mod state;
 pub mod statehd;
 pub mod user_defined;
-mod utils;
 
 impl From<EosError> for PyErr {
     fn from(e: EosError) -> PyErr {
