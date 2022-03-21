@@ -8,6 +8,7 @@ use num_dual::linalg::{norm, smallest_ev, LU};
 use num_dual::{Dual, Dual3, Dual64, DualNum, DualVec64, HyperDual, StaticVec};
 use num_traits::{One, Zero};
 use quantity::{QuantityArray1, QuantityScalar};
+use std::convert::TryFrom;
 use std::rc::Rc;
 
 const MAX_ITER_CRIT_POINT: usize = 50;
@@ -36,9 +37,9 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             .collect()
     }
 
-    pub(crate) fn critical_point_binary(
+    pub fn critical_point_binary(
         eos: &Rc<E>,
-        tp: TPSpec<U>,
+        temperature_or_pressure: QuantityScalar<U>,
         initial_temperature: Option<QuantityScalar<U>>,
         initial_molefracs: Option<[f64; 2]>,
         options: SolverOptions,
@@ -46,7 +47,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     where
         QuantityScalar<U>: std::fmt::Display,
     {
-        match tp {
+        match TPSpec::try_from(temperature_or_pressure)? {
             TPSpec::Temperature(t) => {
                 Self::critical_point_binary_t(eos, t, initial_molefracs, options)
             }

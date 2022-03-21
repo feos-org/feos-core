@@ -19,9 +19,11 @@ pub enum EosError {
     #[error("Undetermined state: {0}.")]
     UndeterminedState(String),
     #[error("System is supercritical.")]
-    SuperCritical(),
+    SuperCritical,
     #[error("No phase split according to stability analysis.")]
     NoPhaseSplit,
+    #[error("Wrong input units. Expected: {0}, got {1}")]
+    WrongUnits(String, String),
     #[error(transparent)]
     QuantityError(#[from] QuantityError),
     #[error(transparent)]

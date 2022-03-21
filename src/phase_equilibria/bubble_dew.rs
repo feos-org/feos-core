@@ -9,6 +9,7 @@ use crate::{equation_of_state::EquationOfState, EosUnit};
 use ndarray::*;
 use num_dual::linalg::{norm, LU};
 use quantity::{QuantityArray1, QuantityScalar};
+use std::convert::TryFrom;
 use std::rc::Rc;
 
 const MAX_ITER_INNER: usize = 5;
@@ -68,12 +69,12 @@ where
 /// # Bubble and dew point calculations
 impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     /// Calculate a phase equilibrium for a given temperature
-    /// and composition of the liquid phase.
-    pub fn bubble_point_tx(
+    /// or pressure and composition of the liquid phase.
+    pub fn bubble_point(
         eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
-        pressure: Option<QuantityScalar<U>>,
+        temperature_or_pressure: QuantityScalar<U>,
         liquid_molefracs: &Array1<f64>,
+        tp_init: Option<QuantityScalar<U>>,
         vapor_molefracs: Option<&Array1<f64>>,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
@@ -82,32 +83,8 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     {
         Self::bubble_dew_point_with_options(
             eos,
-            TPSpec::Temperature(temperature),
-            pressure,
-            liquid_molefracs,
-            vapor_molefracs,
-            true,
-            options,
-        )
-    }
-
-    /// Calculate a phase equilibrium for a given pressure
-    /// and composition of the liquid phase.
-    pub fn bubble_point_px(
-        eos: &Rc<E>,
-        pressure: QuantityScalar<U>,
-        temperature: Option<QuantityScalar<U>>,
-        liquid_molefracs: &Array1<f64>,
-        vapor_molefracs: Option<&Array1<f64>>,
-        options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display,
-    {
-        Self::bubble_dew_point_with_options(
-            eos,
-            TPSpec::Pressure(pressure),
-            temperature,
+            TPSpec::try_from(temperature_or_pressure)?,
+            tp_init,
             liquid_molefracs,
             vapor_molefracs,
             true,
@@ -116,12 +93,12 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     /// Calculate a phase equilibrium for a given temperature
-    /// and composition of the vapor phase.
-    pub fn dew_point_tx(
+    /// or pressure and composition of the vapor phase.
+    pub fn dew_point(
         eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
-        pressure: Option<QuantityScalar<U>>,
+        temperature_or_pressure: QuantityScalar<U>,
         vapor_molefracs: &Array1<f64>,
+        tp_init: Option<QuantityScalar<U>>,
         liquid_molefracs: Option<&Array1<f64>>,
         options: (SolverOptions, SolverOptions),
     ) -> EosResult<Self>
@@ -130,32 +107,8 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     {
         Self::bubble_dew_point_with_options(
             eos,
-            TPSpec::Temperature(temperature),
-            pressure,
-            vapor_molefracs,
-            liquid_molefracs,
-            false,
-            options,
-        )
-    }
-
-    /// Calculate a phase equilibrium for a given pressure
-    /// and composition of the vapor phase.
-    pub fn dew_point_px(
-        eos: &Rc<E>,
-        pressure: QuantityScalar<U>,
-        temperature: Option<QuantityScalar<U>>,
-        vapor_molefracs: &Array1<f64>,
-        liquid_molefracs: Option<&Array1<f64>>,
-        options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display,
-    {
-        Self::bubble_dew_point_with_options(
-            eos,
-            TPSpec::Pressure(pressure),
-            temperature,
+            TPSpec::try_from(temperature_or_pressure)?,
+            tp_init,
             vapor_molefracs,
             liquid_molefracs,
             false,

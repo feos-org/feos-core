@@ -1,5 +1,5 @@
-use feos_core::python::user_defined::*;
 use feos_core::python::statehd::*;
+use feos_core::python::user_defined::*;
 use feos_core::*;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -9,7 +9,6 @@ use quantity::python::*;
 use quantity::si::*;
 use std::collections::HashMap;
 use std::rc::Rc;
-
 
 /// Equation of state implemented as python class.
 ///
@@ -43,7 +42,7 @@ impl_equation_of_state!(PyUserDefinedEos);
 impl_virial_coefficients!(PyUserDefinedEos);
 impl_state!(PyEoSObj, PyUserDefinedEos);
 impl_state_molarweight!(PyEoSObj, PyUserDefinedEos);
-impl_vle_state!(PyEoSObj, PyUserDefinedEos);
+impl_phase_equilibrium!(PyEoSObj, PyUserDefinedEos);
 
 #[pymodule]
 pub fn user_defined(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -61,9 +60,7 @@ pub fn user_defined(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyUserDefinedEos>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
-    m.add_class::<PyPhaseDiagramPure>()?;
-    m.add_class::<PyPhaseDiagramBinary>()?;
-    m.add_class::<PyPhaseDiagramHetero>()?;
+    m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
     Ok(())
 }

@@ -23,7 +23,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         temperature: QuantityScalar<U>,
         pressure: QuantityScalar<U>,
         feed: &QuantityArray1<U>,
-        init_vle_state: Option<&PhaseEquilibrium<U, E, 2>>,
+        initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> EosResult<Self> {
@@ -34,7 +34,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
             feed,
             DensityInitialization::None,
         )?
-        .tp_flash(init_vle_state, options, non_volatile_components)
+        .tp_flash(initial_state, options, non_volatile_components)
     }
 }
 
@@ -48,7 +48,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     /// containing non-volatile components (e.g. ions).
     pub fn tp_flash(
         &self,
-        init_vle_state: Option<&PhaseEquilibrium<U, E, 2>>,
+        initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
         options: SolverOptions,
         non_volatile_components: Option<Vec<usize>>,
     ) -> EosResult<PhaseEquilibrium<U, E, 2>> {
@@ -56,7 +56,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
         let (max_iter, tol, verbosity) = options.unwrap_or(MAX_ITER_TP, TOL_TP);
 
         // initialization
-        let mut new_vle_state = match init_vle_state {
+        let mut new_vle_state = match initial_state {
             Some(init) => init
                 .clone()
                 .update_pressure(self.temperature, self.pressure(Contributions::Total))?,

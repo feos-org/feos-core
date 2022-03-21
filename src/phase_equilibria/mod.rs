@@ -13,8 +13,8 @@ mod phase_diagram_pure;
 mod stability_analysis;
 mod tp_flash;
 mod vle_pure;
-pub use phase_diagram_binary::{PhaseDiagramBinary, PhaseDiagramHetero};
-pub use phase_diagram_pure::PhaseDiagramPure;
+pub use phase_diagram_binary::PhaseDiagramHetero;
+pub use phase_diagram_pure::{PhaseDiagram, StateVec};
 
 /// Level of detail in the iteration output.
 #[derive(Copy, Clone, PartialOrd, PartialEq)]

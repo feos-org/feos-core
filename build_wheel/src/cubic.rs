@@ -38,16 +38,14 @@ impl_virial_coefficients!(PyPengRobinson);
 
 impl_state!(PengRobinson, PyPengRobinson);
 impl_state_molarweight!(PengRobinson, PyPengRobinson);
-impl_vle_state!(PengRobinson, PyPengRobinson);
+impl_phase_equilibrium!(PengRobinson, PyPengRobinson);
 
 #[pymodule]
 pub fn cubic(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyPengRobinson>()?;
     m.add_class::<PyPengRobinsonParameters>()?;
     m.add_class::<PyState>()?;
-    m.add_class::<PyPhaseDiagramPure>()?;
-    m.add_class::<PyPhaseDiagramBinary>()?;
-    m.add_class::<PyPhaseDiagramHetero>()?;
+    m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
     Ok(())
 }

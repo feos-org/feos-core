@@ -1,21 +1,28 @@
 use super::{PhaseEquilibrium, SolverOptions};
-use crate::equation_of_state::EquationOfState;
+use crate::equation_of_state::{EquationOfState, MolarWeight};
 use crate::errors::EosResult;
 use crate::state::{Contributions, State};
 use crate::EosUnit;
 use ndarray::prelude::*;
 use quantity::{QuantityArray1, QuantityScalar};
-use std::fmt;
 use std::rc::Rc;
 
-/// Pure component phase diagram.
-#[derive(Debug)]
-pub struct PhaseDiagramPure<U: EosUnit, E: EquationOfState> {
+/// Pure component and binary mixture phase diagrams.
+pub struct PhaseDiagram<U, E> {
     pub states: Vec<PhaseEquilibrium<U, E, 2>>,
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseDiagramPure<U, E> {
-    pub fn new(
+impl<U: Clone, E> Clone for PhaseDiagram<U, E> {
+    fn clone(&self) -> Self {
+        Self {
+            states: self.states.clone(),
+        }
+    }
+}
+
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+    /// Calculate a phase diagram for a pure component.
+    pub fn pure(
         eos: &Rc<E>,
         min_temperature: QuantityScalar<U>,
         npoints: usize,
@@ -36,89 +43,99 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramPure<U, E> {
 
         let mut vle = None;
         for &ti in temperatures.iter() {
-            vle = PhaseEquilibrium::pure_t(eos, ti, vle.as_ref(), options).ok();
+            vle = PhaseEquilibrium::pure(eos, ti, vle.as_ref(), options).ok();
             if let Some(vle) = vle.as_ref() {
                 states.push(vle.clone());
             }
         }
         states.push(PhaseEquilibrium::from_states(sc.clone(), sc));
 
-        Ok(PhaseDiagramPure { states })
+        Ok(PhaseDiagram { states })
     }
 
+    /// Return the vapor states of the diagram.
+    pub fn vapor(&self) -> StateVec<'_, U, E> {
+        StateVec {
+            states: self.states.iter().map(|s| s.vapor()).collect(),
+        }
+    }
+
+    /// Return the liquid states of the diagram.
+    pub fn liquid(&self) -> StateVec<'_, U, E> {
+        StateVec {
+            states: self.states.iter().map(|s| s.liquid()).collect(),
+        }
+    }
+}
+
+/// A list of states for a simple access to properties
+/// of multiple states.
+pub struct StateVec<'a, U, E> {
+    pub states: Vec<&'a State<U, E>>,
+}
+
+impl<'a, U: EosUnit, E: EquationOfState> StateVec<'a, U, E> {
     pub fn temperature(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].vapor().temperature)
+        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].temperature)
     }
 
     pub fn pressure(&self) -> QuantityArray1<U> {
         QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].vapor().pressure(Contributions::Total)
+            self.states[i].pressure(Contributions::Total)
         })
     }
 
-    pub fn density_vapor(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].vapor().density)
-    }
-
-    pub fn density_liquid(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].liquid().density)
-    }
-
-    pub fn molar_enthalpy_vapor(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].vapor().molar_enthalpy(Contributions::Total)
+    pub fn compressibility(&self) -> Array1<f64> {
+        Array1::from_shape_fn(self.states.len(), |i| {
+            self.states[i].compressibility(Contributions::Total)
         })
     }
 
-    pub fn molar_enthalpy_liquid(&self) -> QuantityArray1<U> {
+    pub fn density(&self) -> QuantityArray1<U> {
+        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].density)
+    }
+
+    pub fn molefracs(&self) -> Array2<f64> {
+        Array2::from_shape_fn(
+            (self.states.len(), self.states[0].eos.components()),
+            |(i, j)| self.states[i].molefracs[j],
+        )
+    }
+
+    pub fn molar_enthalpy(&self) -> QuantityArray1<U> {
         QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].liquid().molar_enthalpy(Contributions::Total)
+            self.states[i].molar_enthalpy(Contributions::Total)
         })
     }
 
-    pub fn molar_entropy_vapor(&self) -> QuantityArray1<U> {
+    pub fn molar_entropy(&self) -> QuantityArray1<U> {
         QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].vapor().molar_entropy(Contributions::Total)
-        })
-    }
-
-    pub fn molar_entropy_liquid(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].liquid().molar_entropy(Contributions::Total)
+            self.states[i].molar_entropy(Contributions::Total)
         })
     }
 }
 
-impl<U, E> fmt::Display for PhaseDiagramPure<U, E>
-where
-    U: EosUnit,
-    QuantityScalar<U>: fmt::Display,
-    E: EquationOfState,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let temperature = self.temperature();
-        let pressure = self.pressure();
-        let density_vapor = self.density_vapor();
-        let density_liquid = self.density_liquid();
-        let molar_enthalpy_vapor = self.molar_enthalpy_vapor();
-        let molar_enthalpy_liquid = self.molar_enthalpy_liquid();
-        let molar_entropy_vapor = self.molar_entropy_vapor();
-        let molar_entropy_liquid = self.molar_entropy_liquid();
+impl<'a, U: EosUnit, E: EquationOfState + MolarWeight<U>> StateVec<'a, U, E> {
+    pub fn mass_density(&self) -> QuantityArray1<U> {
+        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].mass_density())
+    }
 
-        for i in 0..temperature.len() {
-            writeln!(
-                f,
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                temperature.get(i),
-                pressure.get(i),
-                density_vapor.get(i),
-                density_liquid.get(i),
-                molar_enthalpy_vapor.get(i),
-                molar_enthalpy_liquid.get(i),
-                molar_entropy_vapor.get(i),
-                molar_entropy_liquid.get(i)
-            )?;
-        }
-        Ok(())
+    pub fn massfracs(&self) -> Array2<f64> {
+        Array2::from_shape_fn(
+            (self.states.len(), self.states[0].eos.components()),
+            |(i, j)| self.states[i].massfracs()[j],
+        )
+    }
+
+    pub fn specific_enthalpy(&self) -> QuantityArray1<U> {
+        QuantityArray1::from_shape_fn(self.states.len(), |i| {
+            self.states[i].specific_enthalpy(Contributions::Total)
+        })
+    }
+
+    pub fn specific_entropy(&self) -> QuantityArray1<U> {
+        QuantityArray1::from_shape_fn(self.states.len(), |i| {
+            self.states[i].specific_entropy(Contributions::Total)
+        })
     }
 }
