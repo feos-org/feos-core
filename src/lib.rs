@@ -40,9 +40,9 @@ pub use equation_of_state::{
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{
-    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, StateVec, Verbosity,
+    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
 };
-pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD};
+pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
 
 #[cfg(feature = "python")]
 pub mod python;

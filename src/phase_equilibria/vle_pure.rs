@@ -420,7 +420,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
     }
 
     /// Calculate the pure component phase equilibria of all
-    /// components in the system for the given temperature.
+    /// components in the system.
     pub fn vle_pure_comps(
         eos: &Rc<E>,
         temperature_or_pressure: QuantityScalar<U>,

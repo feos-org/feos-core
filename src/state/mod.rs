@@ -24,7 +24,7 @@ mod builder;
 mod cache;
 mod properties;
 pub use builder::StateBuilder;
-pub use properties::Contributions;
+pub use properties::{Contributions, StateVec};
 
 /// Initial values in a density iteration.
 #[derive(Clone, Copy)]

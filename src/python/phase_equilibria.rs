@@ -13,8 +13,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
             /// initial_state : PhaseEquilibrium, optional
@@ -60,8 +60,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// temperature : SINumber
             ///     The system temperature.
             /// pressure : SINumber
@@ -114,8 +114,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature_or_pressure.
             /// liquid_molefracs : numpy.ndarray
@@ -173,8 +173,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
             /// vapor_molefracs : numpy.ndarray
@@ -257,8 +257,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
             ///
@@ -279,8 +279,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// temperature : SINumber
             ///     The system temperature.
             ///
@@ -301,8 +301,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// pressure : SINumber
             ///     The system pressure.
             ///
@@ -339,8 +339,8 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : Saft
-            ///     The SAFT equation of state.
+            /// eos : $py_eos
+            ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
             /// x_init : list[float]
@@ -558,7 +558,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos: $eos
+            /// eos : $py_eos
             ///     The equation of state.
             /// temperature_or_pressure: SINumber
             ///     The constant temperature or pressure.
@@ -616,7 +616,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos: $eos
+            /// eos : $py_eos
             ///     The equation of state.
             /// temperature_or_pressure: SINumber
             ///     The consant temperature or pressure.

@@ -161,8 +161,6 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
         let mut states = Vec::with_capacity(npoints);
         let tp: TPSpec<U> = temperature_or_pressure.try_into()?;
 
-        // let feed = arr1(&[x_feed, 1.0 - x_feed]) * U::reference_moles();
-
         let tp_vec = QuantityArray1::linspace(min_tp, max_tp, npoints)?;
         let mut vle = None;
         for i in 0..npoints {
