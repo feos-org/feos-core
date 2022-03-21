@@ -176,7 +176,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Calculate the critical point of a binary system for given temperature.
-    pub fn critical_point_binary_t(
+    fn critical_point_binary_t(
         eos: &Rc<E>,
         temperature: QuantityScalar<U>,
         initial_molefracs: Option<[f64; 2]>,
@@ -261,7 +261,7 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
     }
 
     /// Calculate the critical point of a binary system for given pressure.
-    pub fn critical_point_binary_p(
+    fn critical_point_binary_p(
         eos: &Rc<E>,
         pressure: QuantityScalar<U>,
         initial_temperature: Option<QuantityScalar<U>>,

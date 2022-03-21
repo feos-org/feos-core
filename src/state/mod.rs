@@ -803,7 +803,7 @@ where
             Ok(Self::Pressure(quantity))
         } else {
             Err(EosError::WrongUnits(
-                "K or bar".into(),
+                "temperature or pressure".into(),
                 format!("{}", quantity),
             ))
         }
