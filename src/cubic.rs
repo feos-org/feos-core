@@ -17,6 +17,7 @@ use num_dual::DualNum;
 use quantity::si::{SIArray1, SIUnit};
 use serde::{Deserialize, Serialize};
 use std::f64::consts::SQRT_2;
+use std::fmt;
 use std::rc::Rc;
 
 const KB_A3: f64 = 13806490.0;
@@ -165,47 +166,12 @@ impl Parameter for PengRobinsonParameters {
     }
 }
 
-/// A simple version of the Peng-Robinson equation of state.
-pub struct PengRobinson {
-    /// Parameters
+struct PengRobinsonContribution {
     parameters: Rc<PengRobinsonParameters>,
-    /// Ideal gas contributions to the Helmholtz energy
-    ideal_gas: Joback,
 }
 
-impl PengRobinson {
-    /// Create a new equation of state from a set of parameters.
-    pub fn new(parameters: Rc<PengRobinsonParameters>) -> Self {
-        let ideal_gas = parameters.joback_records.as_ref().map_or_else(
-            || Joback::default(parameters.tc.len()),
-            |j| Joback::new(j.clone()),
-        );
-        Self {
-            parameters,
-            ideal_gas,
-        }
-    }
-}
-
-impl EquationOfState for PengRobinson {
-    fn components(&self) -> usize {
-        self.parameters.b.len()
-    }
-
-    fn subset(&self, component_list: &[usize]) -> Self {
-        Self::new(Rc::new(self.parameters.subset(component_list)))
-    }
-
-    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
-        let b = (moles * &self.parameters.b).sum() / moles.sum();
-        0.9 / b
-    }
-
-    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
-        unreachable!()
-    }
-
-    fn evaluate_residual<D: DualNum<f64>>(&self, state: &StateHD<D>) -> D {
+impl<D: DualNum<f64>> HelmholtzEnergyDual<D> for PengRobinsonContribution {
+    fn helmholtz_energy(&self, state: &StateHD<D>) -> D {
         // temperature dependent a parameter
         let p = &self.parameters;
         let x = &state.molefracs;
@@ -229,15 +195,59 @@ impl EquationOfState for PengRobinson {
             - ak_mix / (b * SQRT_2 * 2.0 * state.temperature)
                 * ((v * (SQRT_2 - 1.0) + b * n) / (v * (SQRT_2 + 1.0) - b * n)).ln())
     }
+}
 
-    fn evaluate_residual_contributions<D: DualNum<f64>>(
-        &self,
-        state: &StateHD<D>,
-    ) -> Vec<(String, D)>
-    where
-        dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
-    {
-        vec![("Peng-Robinson".into(), self.evaluate_residual(state))]
+impl fmt::Display for PengRobinsonContribution {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Peng Robinson")
+    }
+}
+
+/// A simple version of the Peng-Robinson equation of state.
+pub struct PengRobinson {
+    /// Parameters
+    parameters: Rc<PengRobinsonParameters>,
+    /// Ideal gas contributions to the Helmholtz energy
+    ideal_gas: Joback,
+    /// Non-ideal contributions to the Helmholtz energy
+    contributions: Vec<Box<dyn HelmholtzEnergy>>,
+}
+
+impl PengRobinson {
+    /// Create a new equation of state from a set of parameters.
+    pub fn new(parameters: Rc<PengRobinsonParameters>) -> Self {
+        let ideal_gas = parameters.joback_records.as_ref().map_or_else(
+            || Joback::default(parameters.tc.len()),
+            |j| Joback::new(j.clone()),
+        );
+        let contributions: Vec<Box<dyn HelmholtzEnergy>> =
+            vec![Box::new(PengRobinsonContribution {
+                parameters: parameters.clone(),
+            })];
+        Self {
+            parameters,
+            ideal_gas,
+            contributions,
+        }
+    }
+}
+
+impl EquationOfState for PengRobinson {
+    fn components(&self) -> usize {
+        self.parameters.b.len()
+    }
+
+    fn subset(&self, component_list: &[usize]) -> Self {
+        Self::new(Rc::new(self.parameters.subset(component_list)))
+    }
+
+    fn compute_max_density(&self, moles: &Array1<f64>) -> f64 {
+        let b = (moles * &self.parameters.b).sum() / moles.sum();
+        0.9 / b
+    }
+
+    fn residual(&self) -> &[Box<dyn HelmholtzEnergy>] {
+        &self.contributions
     }
 
     fn ideal_gas(&self) -> &dyn IdealGasContribution {
