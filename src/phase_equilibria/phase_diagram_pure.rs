@@ -55,15 +55,11 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
 
     /// Return the vapor states of the diagram.
     pub fn vapor(&self) -> StateVec<'_, U, E> {
-        StateVec {
-            states: self.states.iter().map(|s| s.vapor()).collect(),
-        }
+        self.states.iter().map(|s| s.vapor()).collect()
     }
 
     /// Return the liquid states of the diagram.
     pub fn liquid(&self) -> StateVec<'_, U, E> {
-        StateVec {
-            states: self.states.iter().map(|s| s.liquid()).collect(),
-        }
+        self.states.iter().map(|s| s.liquid()).collect()
     }
 }

@@ -5,6 +5,7 @@ use crate::EosUnit;
 use ndarray::{Array1, Array2};
 use num_dual::DualNum;
 use quantity::{QuantityArray, QuantityArray1, QuantityArray2, QuantityScalar};
+use std::iter::FromIterator;
 use std::ops::{Add, Sub};
 
 #[derive(Clone, Copy)]
@@ -711,6 +712,14 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
 /// of multiple states.
 pub struct StateVec<'a, U, E> {
     pub states: Vec<&'a State<U, E>>,
+}
+
+impl<'a, U, E> FromIterator<&'a State<U, E>> for StateVec<'a, U, E> {
+    fn from_iter<I: IntoIterator<Item = &'a State<U, E>>>(iter: I) -> Self {
+        Self {
+            states: iter.into_iter().collect(),
+        }
+    }
 }
 
 impl<'a, U: EosUnit, E: EquationOfState> StateVec<'a, U, E> {
