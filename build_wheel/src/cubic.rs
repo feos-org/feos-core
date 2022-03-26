@@ -1,5 +1,5 @@
 use feos_core::cubic::PengRobinson;
-use feos_core::python::cubic::PyPengRobinsonParameters;
+use feos_core::python::cubic::{PyPengRobinsonParameters, PyPengRobinsonRecord, PyPureRecord};
 use feos_core::*;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -38,16 +38,16 @@ impl_virial_coefficients!(PyPengRobinson);
 
 impl_state!(PengRobinson, PyPengRobinson);
 impl_state_molarweight!(PengRobinson, PyPengRobinson);
-impl_vle_state!(PengRobinson, PyPengRobinson);
+impl_phase_equilibrium!(PengRobinson, PyPengRobinson);
 
 #[pymodule]
 pub fn cubic(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyPengRobinson>()?;
     m.add_class::<PyPengRobinsonParameters>()?;
+    m.add_class::<PyPengRobinsonRecord>()?;
+    m.add_class::<PyPureRecord>()?;
     m.add_class::<PyState>()?;
-    m.add_class::<PyPhaseDiagramPure>()?;
-    m.add_class::<PyPhaseDiagramBinary>()?;
-    m.add_class::<PyPhaseDiagramHetero>()?;
+    m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
     Ok(())
 }
