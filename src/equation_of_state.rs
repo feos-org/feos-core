@@ -165,9 +165,6 @@ pub trait EquationOfState {
     fn residual(&self) -> &[Box<dyn HelmholtzEnergy>];
 
     /// Evaluate the residual reduced Helmholtz energy $\beta A^\mathrm{res}$.
-    ///
-    /// For simple equations of state (see e.g. `PengRobinson`) it might be
-    /// easier to overwrite this function instead of implementing `residual`.
     fn evaluate_residual<D: DualNum<f64>>(&self, state: &StateHD<D>) -> D
     where
         dyn HelmholtzEnergy: HelmholtzEnergyDual<D>,
@@ -179,10 +176,7 @@ pub trait EquationOfState {
     }
 
     /// Evaluate the reduced Helmholtz energy of each individual contribution
-    /// and return them together with a string representatino of the contribution.
-    ///
-    /// If `evaluate_residual` is implemented instead of `residual`, this function
-    /// also needs to be overwritten to avoid panics.
+    /// and return them together with a string representation of the contribution.
     fn evaluate_residual_contributions<D: DualNum<f64>>(
         &self,
         state: &StateHD<D>,
