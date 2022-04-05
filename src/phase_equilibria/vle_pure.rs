@@ -4,8 +4,9 @@ use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State, TPSpec};
 use crate::EosUnit;
-use ndarray::arr1;
+use ndarray::{arr1, Array1};
 use quantity::{QuantityArray1, QuantityScalar};
+use std::convert::TryFrom;
 use std::rc::Rc;
 
 const SCALE_T_NEW: f64 = 0.7;
@@ -15,9 +16,25 @@ const TOL_PURE: f64 = 1e-12;
 
 /// # Pure component phase equilibria
 impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
+    /// Calculate a phase equilibrium for a pure component.
+    pub fn pure(
+        eos: &Rc<E>,
+        temperature_or_pressure: QuantityScalar<U>,
+        initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
+        options: SolverOptions,
+    ) -> EosResult<Self>
+    where
+        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
+    {
+        match TPSpec::try_from(temperature_or_pressure)? {
+            TPSpec::Temperature(t) => Self::pure_t(eos, t, initial_state, options),
+            TPSpec::Pressure(p) => Self::pure_p(eos, p, initial_state, options),
+        }
+    }
+
     /// Calculate a phase equilibrium for a pure component
     /// and given temperature.
-    pub fn pure_t(
+    fn pure_t(
         eos: &Rc<E>,
         temperature: QuantityScalar<U>,
         initial_state: Option<&PhaseEquilibrium<U, E, 2>>,
@@ -151,7 +168,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
     /// Calculate a phase equilibrium for a pure component
     /// and given pressure.
-    pub fn pure_p(
+    fn pure_p(
         eos: &Rc<E>,
         pressure: QuantityScalar<U>,
         initial_state: Option<&Self>,
@@ -314,7 +331,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
 
         let cp = State::critical_point(eos, None, None, SolverOptions::default())?;
         if pressure > cp.pressure(Contributions::Total) {
-            return Err(EosError::SuperCritical());
+            return Err(EosError::SuperCritical);
         };
         if let Some(mut e) = vle {
             if e.vapor().density < cp.density {
@@ -402,24 +419,11 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
             .collect()
     }
 
-    pub(super) fn vle_pure_comps(
-        eos: &Rc<E>,
-        tp: TPSpec<U>,
-    ) -> Vec<Option<PhaseEquilibrium<U, E, 2>>>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        match tp {
-            TPSpec::Temperature(t) => Self::vle_pure_comps_t(eos, t),
-            TPSpec::Pressure(p) => Self::vle_pure_comps_p(eos, p),
-        }
-    }
-
     /// Calculate the pure component phase equilibria of all
-    /// components in the system for the given temperature.
-    pub fn vle_pure_comps_t(
+    /// components in the system.
+    pub fn vle_pure_comps(
         eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
+        temperature_or_pressure: QuantityScalar<U>,
     ) -> Vec<Option<PhaseEquilibrium<U, E, 2>>>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
@@ -427,25 +431,38 @@ impl<U: EosUnit, E: EquationOfState> PhaseEquilibrium<U, E, 2> {
         (0..eos.components())
             .map(|i| {
                 let pure_eos = Rc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_t(&pure_eos, temperature, None, SolverOptions::default())
-                    .ok()
-            })
-            .collect()
-    }
-
-    /// Calculate the pure component phase equilibria of all
-    /// components in the system for the given pressure.
-    pub fn vle_pure_comps_p(
-        eos: &Rc<E>,
-        pressure: QuantityScalar<U>,
-    ) -> Vec<Option<PhaseEquilibrium<U, E, 2>>>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        (0..eos.components())
-            .map(|i| {
-                let pure_eos = Rc::new(eos.subset(&[i]));
-                PhaseEquilibrium::pure_p(&pure_eos, pressure, None, SolverOptions::default()).ok()
+                PhaseEquilibrium::pure(
+                    &pure_eos,
+                    temperature_or_pressure,
+                    None,
+                    SolverOptions::default(),
+                )
+                .ok()
+                .map(|vle_pure| {
+                    let mut moles_vapor = Array1::zeros(eos.components()) * U::reference_moles();
+                    let mut moles_liquid = moles_vapor.clone();
+                    moles_vapor
+                        .try_set(i, vle_pure.vapor().total_moles)
+                        .unwrap();
+                    moles_liquid
+                        .try_set(i, vle_pure.liquid().total_moles)
+                        .unwrap();
+                    let vapor = State::new_nvt(
+                        eos,
+                        vle_pure.vapor().temperature,
+                        vle_pure.vapor().volume,
+                        &moles_vapor,
+                    )
+                    .unwrap();
+                    let liquid = State::new_nvt(
+                        eos,
+                        vle_pure.liquid().temperature,
+                        vle_pure.liquid().volume,
+                        &moles_liquid,
+                    )
+                    .unwrap();
+                    PhaseEquilibrium::from_states(vapor, liquid)
+                })
             })
             .collect()
     }

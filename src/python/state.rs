@@ -182,56 +182,16 @@ macro_rules! impl_state {
                 )?))
             }
 
-            /// Create a thermodynamic state at critical conditions for a binary system
-            /// with given temperature.
+            /// Create a thermodynamic state at critical conditions for a binary system.
             ///
             /// Parameters
             /// ----------
             /// eos: Eos
             ///     The equation of state to use.
-            /// temperature: SINumber
-            ///     temperature.
-            /// initial_molefracs: [float], optional
-            ///     An initial guess for the composition.
-            /// max_iter : int, optional
-            ///     The maximum number of iterations.
-            /// tol: float, optional
-            ///     The solution tolerance.
-            /// verbosity : Verbosity, optional
-            ///     The verbosity.
-            ///
-            /// Returns
-            /// -------
-            /// State : State at critical conditions.
-            #[staticmethod]
-            #[pyo3(text_signature = "(eos, temperature, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)")]
-            fn critical_point_binary_t(
-                eos: $py_eos,
-                temperature: PySINumber,
-                initial_molefracs: Option<[f64; 2]>,
-                max_iter: Option<usize>,
-                tol: Option<f64>,
-                verbosity: Option<Verbosity>,
-            ) -> PyResult<Self> {
-                Ok(PyState(State::critical_point_binary_t(
-                    &eos.0,
-                    temperature.into(),
-                    initial_molefracs,
-                    (max_iter, tol, verbosity).into(),
-                )?))
-            }
-
-            /// Create a thermodynamic state at critical conditions for a binary system
-            /// with given pressure.
-            ///
-            /// Parameters
-            /// ----------
-            /// eos: Eos
-            ///     The equation of state to use.
-            /// pressure: SINumber
-            ///     pressure.
+            /// temperature_or_pressure: SINumber
+            ///     temperature_or_pressure.
             /// initial_temperature: SINumber, optional
-            ///     The initial temperature.
+            ///     An initial guess for the temperature.
             /// initial_molefracs: [float], optional
             ///     An initial guess for the composition.
             /// max_iter : int, optional
@@ -245,19 +205,19 @@ macro_rules! impl_state {
             /// -------
             /// State : State at critical conditions.
             #[staticmethod]
-            #[pyo3(text_signature = "(eos, pressure, initial_temperature=None, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)")]
-            fn critical_point_binary_p(
+            #[pyo3(text_signature = "(eos, temperature_or_pressure, initial_molefracs=None, max_iter=None, tol=None, verbosity=None)")]
+            fn critical_point_binary(
                 eos: $py_eos,
-                pressure: PySINumber,
+                temperature_or_pressure: PySINumber,
                 initial_temperature: Option<PySINumber>,
                 initial_molefracs: Option<[f64; 2]>,
                 max_iter: Option<usize>,
                 tol: Option<f64>,
                 verbosity: Option<Verbosity>,
             ) -> PyResult<Self> {
-                Ok(PyState(State::critical_point_binary_p(
+                Ok(PyState(State::critical_point_binary(
                     &eos.0,
-                    pressure.into(),
+                    temperature_or_pressure.into(),
                     initial_temperature.map(|t| t.into()),
                     initial_molefracs,
                     (max_iter, tol, verbosity).into(),
@@ -987,6 +947,60 @@ macro_rules! impl_state {
                 Ok(self.0.to_string())
             }
         }
+
+
+        #[pyclass(name = "StateVec", unsendable)]
+        pub struct PyStateVec(Vec<State<SIUnit, $eos>>);
+
+        impl From<StateVec<'_, SIUnit, $eos>> for PyStateVec {
+            fn from(vec: StateVec<SIUnit, $eos>) -> Self {
+                Self(vec.states.iter().map(|&s| s.clone()).collect())
+            }
+        }
+
+        impl<'a> From<&'a PyStateVec> for StateVec<'a, SIUnit, $eos> {
+            fn from(vec: &'a PyStateVec) -> Self {
+                Self { states: vec.0.iter().collect() }
+            }
+        }
+
+        #[pymethods]
+        impl PyStateVec {
+            #[getter]
+            fn get_temperature(&self) -> PySIArray1{
+                StateVec::from(self).temperature().into()
+            }
+
+            #[getter]
+            fn get_pressure(&self) -> PySIArray1 {
+                StateVec::from(self).pressure().into()
+            }
+
+            #[getter]
+            fn get_compressibility<'py>(&self, py: Python<'py>) -> &'py PyArray1<f64> {
+                StateVec::from(self).compressibility().view().to_pyarray(py)
+            }
+
+            #[getter]
+            fn get_density(&self) -> PySIArray1 {
+                StateVec::from(self).density().into()
+            }
+
+            #[getter]
+            fn get_molefracs<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
+                StateVec::from(self).molefracs().view().to_pyarray(py)
+            }
+
+            #[getter]
+            fn get_molar_enthalpy(&self) -> PySIArray1 {
+                StateVec::from(self).molar_enthalpy().into()
+            }
+
+            #[getter]
+            fn get_molar_entropy(&self) -> PySIArray1 {
+                StateVec::from(self).molar_entropy().into()
+            }
+        }
     };
 }
 
@@ -1138,6 +1152,29 @@ macro_rules! impl_state_molarweight {
             #[pyo3(text_signature = "($self, contributions)")]
             fn specific_enthalpy(&self, contributions: Contributions) -> PySINumber {
                 PySINumber::from(self.0.specific_enthalpy(contributions))
+            }
+        }
+
+        #[pymethods]
+        impl PyStateVec {
+            #[getter]
+            fn get_mass_density(&self) -> PySIArray1 {
+                StateVec::from(self).mass_density().into()
+            }
+
+            #[getter]
+            fn get_massfracs<'py>(&self, py: Python<'py>) -> &'py PyArray2<f64> {
+                StateVec::from(self).massfracs().view().to_pyarray(py)
+            }
+
+            #[getter]
+            fn get_specific_enthalpy(&self) -> PySIArray1 {
+                StateVec::from(self).specific_enthalpy().into()
+            }
+
+            #[getter]
+            fn get_specific_entropy(&self) -> PySIArray1 {
+                StateVec::from(self).specific_entropy().into()
             }
         }
     };

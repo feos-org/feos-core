@@ -6,6 +6,7 @@
 use quantity::si::*;
 use quantity::*;
 
+/// Print messages with level `Verbosity::Iter` or higher.
 #[macro_export]
 macro_rules! log_iter {
     ($verbosity:expr, $($arg:tt)*) => {
@@ -15,6 +16,7 @@ macro_rules! log_iter {
     }
 }
 
+/// Print messages with level `Verbosity::Result` or higher.
 #[macro_export]
 macro_rules! log_result {
     ($verbosity:expr, $($arg:tt)*) => {
@@ -38,10 +40,9 @@ pub use equation_of_state::{
 };
 pub use errors::{EosError, EosResult};
 pub use phase_equilibria::{
-    PhaseDiagramBinary, PhaseDiagramHetero, PhaseDiagramPure, PhaseEquilibrium, SolverOptions,
-    Verbosity,
+    PhaseDiagram, PhaseDiagramHetero, PhaseEquilibrium, SolverOptions, Verbosity,
 };
-pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD};
+pub use state::{Contributions, DensityInitialization, State, StateBuilder, StateHD, StateVec};
 
 #[cfg(feature = "python")]
 pub mod python;

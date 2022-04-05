@@ -16,6 +16,7 @@ use num_dual::linalg::{norm, LU};
 use num_dual::*;
 use quantity::{QuantityArray1, QuantityScalar};
 use std::cell::RefCell;
+use std::convert::TryFrom;
 use std::fmt;
 use std::rc::Rc;
 
@@ -23,7 +24,7 @@ mod builder;
 mod cache;
 mod properties;
 pub use builder::StateBuilder;
-pub use properties::Contributions;
+pub use properties::{Contributions, StateVec};
 
 /// Initial values in a density iteration.
 #[derive(Clone, Copy)]
@@ -785,9 +786,28 @@ fn validate<U: EosUnit>(
 }
 
 #[derive(Clone, Copy)]
-pub enum TPSpec<U: EosUnit> {
+pub enum TPSpec<U> {
     Temperature(QuantityScalar<U>),
     Pressure(QuantityScalar<U>),
+}
+
+impl<U: EosUnit> TryFrom<QuantityScalar<U>> for TPSpec<U>
+where
+    QuantityScalar<U>: std::fmt::Display,
+{
+    type Error = EosError;
+    fn try_from(quantity: QuantityScalar<U>) -> EosResult<Self> {
+        if quantity.has_unit(&U::reference_temperature()) {
+            Ok(Self::Temperature(quantity))
+        } else if quantity.has_unit(&U::reference_pressure()) {
+            Ok(Self::Pressure(quantity))
+        } else {
+            Err(EosError::WrongUnits(
+                "temperature or pressure".into(),
+                format!("{}", quantity),
+            ))
+        }
+    }
 }
 
 mod critical_point;

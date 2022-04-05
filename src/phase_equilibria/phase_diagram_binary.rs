@@ -1,4 +1,4 @@
-use super::{PhaseEquilibrium, SolverOptions};
+use super::{PhaseDiagram, PhaseEquilibrium, SolverOptions};
 use crate::equation_of_state::EquationOfState;
 use crate::errors::{EosError, EosResult};
 use crate::state::{Contributions, DensityInitialization, State, StateBuilder, TPSpec};
@@ -6,75 +6,21 @@ use crate::EosUnit;
 use ndarray::{arr1, arr2, concatenate, s, Array1, Array2, Axis};
 use num_dual::linalg::{norm, LU};
 use quantity::{QuantityArray1, QuantityScalar};
+use std::convert::{TryFrom, TryInto};
 use std::rc::Rc;
 
 const DEFAULT_POINTS: usize = 51;
 
-/// Phase diagram (Txy or pxy) for a binary mixture.
-pub struct PhaseDiagramBinary<U: EosUnit, E: EquationOfState> {
-    pub states: Vec<PhaseEquilibrium<U, E, 2>>,
-}
-
-impl<U: EosUnit, E: EquationOfState> Clone for PhaseDiagramBinary<U, E> {
-    fn clone(&self) -> Self {
-        Self {
-            states: self.states.clone(),
-        }
-    }
-}
-
-impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
-    /// Create a new Txy phase diagram for a given pressure.
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+    /// Create a new binary phase diagram exhibiting a
+    /// vapor/liquid equilibrium.
     ///
     /// If a heteroazeotrope occurs and the composition of the liquid
     /// phases are known, they can be passed as `x_lle` to avoid
-    /// the calculation of instable branches.
-    pub fn new_txy(
+    /// the calculation of unstable branches.
+    pub fn binary_vle(
         eos: &Rc<E>,
-        pressure: QuantityScalar<U>,
-        npoints: Option<usize>,
-        x_lle: Option<(f64, f64)>,
-        bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        Self::new_vle(
-            eos,
-            TPSpec::Pressure(pressure),
-            npoints,
-            x_lle,
-            bubble_dew_options,
-        )
-    }
-
-    /// Create a new pxy phase diagram for a given temperature.
-    ///
-    /// If a heteroazeotrope occurs and the composition of the liquid
-    /// phases are known, they can be passed as `x_lle` to avoid
-    /// the calculation of instable branches.
-    pub fn new_pxy(
-        eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
-        npoints: Option<usize>,
-        x_lle: Option<(f64, f64)>,
-        bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        Self::new_vle(
-            eos,
-            TPSpec::Temperature(temperature),
-            npoints,
-            x_lle,
-            bubble_dew_options,
-        )
-    }
-
-    fn new_vle(
-        eos: &Rc<E>,
-        tp: TPSpec<U>,
+        temperature_or_pressure: QuantityScalar<U>,
         npoints: Option<usize>,
         x_lle: Option<(f64, f64)>,
         bubble_dew_options: (SolverOptions, SolverOptions),
@@ -83,15 +29,16 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
+        let tp = temperature_or_pressure.try_into()?;
 
         // calculate boiling temperature/vapor pressure of pure components
-        let vle_sat = PhaseEquilibrium::vle_pure_comps(eos, tp);
+        let vle_sat = PhaseEquilibrium::vle_pure_comps(eos, temperature_or_pressure);
         let vle_sat = [vle_sat[1].clone(), vle_sat[0].clone()];
 
         // Only calculate up to specified compositions
         if let Some(x_lle) = x_lle {
             let (states1, states2) =
-                Self::new_vlle(eos, tp, npoints, x_lle, vle_sat, bubble_dew_options)?;
+                Self::calculate_vlle(eos, tp, npoints, x_lle, vle_sat, bubble_dew_options)?;
 
             let states = states1
                 .into_iter()
@@ -108,16 +55,26 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
 
         // look for supercritical components
         let (x_lim, vle_lim, bubble) = match vle_sat {
-            [None, None] => return Err(EosError::SuperCritical()),
+            [None, None] => return Err(EosError::SuperCritical),
             [Some(vle2), None] => {
-                let cp =
-                    State::critical_point_binary(eos, tp, None, None, SolverOptions::default())?;
+                let cp = State::critical_point_binary(
+                    eos,
+                    temperature_or_pressure,
+                    None,
+                    None,
+                    SolverOptions::default(),
+                )?;
                 let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
                 ([0.0, cp.molefracs[0]], (vle2, cp_vle), bubble)
             }
             [None, Some(vle1)] => {
-                let cp =
-                    State::critical_point_binary(eos, tp, None, None, SolverOptions::default())?;
+                let cp = State::critical_point_binary(
+                    eos,
+                    temperature_or_pressure,
+                    None,
+                    None,
+                    SolverOptions::default(),
+                )?;
                 let cp_vle = PhaseEquilibrium::from_states(cp.clone(), cp.clone());
                 ([1.0, cp.molefracs[0]], (vle1, cp_vle), bubble)
             }
@@ -141,7 +98,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
     }
 
     #[allow(clippy::type_complexity)]
-    fn new_vlle(
+    fn calculate_vlle(
         eos: &Rc<E>,
         tp: TPSpec<U>,
         npoints: usize,
@@ -179,70 +136,20 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
                 );
                 Ok((states1, states2))
             }
-            _ => Err(EosError::SuperCritical()),
+            _ => Err(EosError::SuperCritical),
         }
     }
 
-    /// Create a new Txy phase diagram for a given pressure using
-    /// Tp flash calculation.
+    /// Create a new phase diagram using Tp flash calculations.
     ///
     /// The usual use case for this function is the calculation of
     /// liquid-liquid phase diagrams, but it can be used for vapor-
     /// liquid diagrams as well, as long as the feed composition is
     /// in a two phase region.
-    pub fn new_txy_lle(
+    pub fn lle(
         eos: &Rc<E>,
-        pressure: QuantityScalar<U>,
-        x_feed: f64,
-        min_temperature: QuantityScalar<U>,
-        max_temperature: QuantityScalar<U>,
-        npoints: Option<usize>,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        Self::new_lle(
-            eos,
-            TPSpec::Pressure(pressure),
-            x_feed,
-            min_temperature,
-            max_temperature,
-            npoints,
-        )
-    }
-
-    /// Create a new pxy phase diagram for a given temperature using
-    /// Tp flash calculation.
-    ///
-    /// The usual use case for this function is the calculation of
-    /// liquid-liquid phase diagrams, but it can be used for vapor-
-    /// liquid diagrams as well, as long as the feed composition is
-    /// in a two phase region.
-    pub fn new_pxy_lle(
-        eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
-        x_feed: f64,
-        min_pressure: QuantityScalar<U>,
-        max_pressure: QuantityScalar<U>,
-        npoints: Option<usize>,
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        Self::new_lle(
-            eos,
-            TPSpec::Temperature(temperature),
-            x_feed,
-            max_pressure,
-            min_pressure,
-            npoints,
-        )
-    }
-
-    fn new_lle(
-        eos: &Rc<E>,
-        tp: TPSpec<U>,
-        x_feed: f64,
+        temperature_or_pressure: QuantityScalar<U>,
+        feed: &QuantityArray1<U>,
         min_tp: QuantityScalar<U>,
         max_tp: QuantityScalar<U>,
         npoints: Option<usize>,
@@ -252,8 +159,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
     {
         let npoints = npoints.unwrap_or(DEFAULT_POINTS);
         let mut states = Vec::with_capacity(npoints);
-
-        let feed = arr1(&[x_feed, 1.0 - x_feed]) * U::reference_moles();
+        let tp: TPSpec<U> = temperature_or_pressure.try_into()?;
 
         let tp_vec = QuantityArray1::linspace(min_tp, max_tp, npoints)?;
         let mut vle = None;
@@ -263,7 +169,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
                 eos,
                 t,
                 p,
-                &feed,
+                feed,
                 vle.as_ref(),
                 SolverOptions::default(),
                 None,
@@ -274,36 +180,6 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramBinary<U, E> {
             }
         }
         Ok(Self { states })
-    }
-
-    pub fn temperature(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].vapor().temperature)
-    }
-
-    pub fn pressure(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].vapor().pressure(Contributions::Total)
-        })
-    }
-
-    pub fn vapor_molefracs(&self) -> Array1<f64> {
-        let mut x: Array1<f64> = self.states.iter().map(|v| v.vapor().molefracs[0]).collect();
-        if self.states[0].vapor().eos.components() == 1 {
-            x[0] = 0.0;
-        }
-        x
-    }
-
-    pub fn liquid_molefracs(&self) -> Array1<f64> {
-        let mut x: Array1<f64> = self
-            .states
-            .iter()
-            .map(|v| v.liquid().molefracs[0])
-            .collect();
-        if self.states[0].liquid().eos.components() == 1 {
-            x[0] = 0.0;
-        }
-        x
     }
 }
 
@@ -376,85 +252,35 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
 }
 
 /// Phase diagram (Txy or pxy) for a system with heteroazeotropic phase behavior.
-pub struct PhaseDiagramHetero<U: EosUnit, E: EquationOfState> {
-    pub vle1: PhaseDiagramBinary<U, E>,
-    pub vle2: PhaseDiagramBinary<U, E>,
-    pub lle: Option<PhaseDiagramBinary<U, E>>,
+pub struct PhaseDiagramHetero<U, E> {
+    pub vle1: PhaseDiagram<U, E>,
+    pub vle2: PhaseDiagram<U, E>,
+    pub lle: Option<PhaseDiagram<U, E>>,
 }
 
-impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
-    /// Create a new Txy phase diagram exhibiting a heteroazeotrope for
-    /// a given pressure.
+impl<U: EosUnit, E: EquationOfState> PhaseDiagram<U, E> {
+    /// Create a new binary phase diagram exhibiting a
+    /// vapor/liquid/liquid equilibrium.
     ///
     /// The `x_lle` parameter is used as initial values for the calculation
     /// of the heteroazeotrope.
-    pub fn new_txy(
+    pub fn binary_vlle(
         eos: &Rc<E>,
-        pressure: QuantityScalar<U>,
-        x_lle: (f64, f64),
-        min_temperature_lle: Option<QuantityScalar<U>>,
-        npoints_vle: Option<usize>,
-        npoints_lle: Option<usize>,
-        bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        Self::new(
-            eos,
-            TPSpec::Pressure(pressure),
-            x_lle,
-            min_temperature_lle,
-            npoints_vle,
-            npoints_lle,
-            bubble_dew_options,
-        )
-    }
-
-    /// Create a new pxy phase diagram exhibiting a heteroazeotrope for
-    /// a given temperature.
-    ///
-    /// The `x_lle` parameter is used as initial values for the calculation
-    /// of the heteroazeotrope.
-    pub fn new_pxy(
-        eos: &Rc<E>,
-        temperature: QuantityScalar<U>,
-        x_lle: (f64, f64),
-        max_pressure_lle: Option<QuantityScalar<U>>,
-        npoints_vle: Option<usize>,
-        npoints_lle: Option<usize>,
-        bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
-    where
-        QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
-    {
-        Self::new(
-            eos,
-            TPSpec::Temperature(temperature),
-            x_lle,
-            max_pressure_lle,
-            npoints_vle,
-            npoints_lle,
-            bubble_dew_options,
-        )
-    }
-
-    fn new(
-        eos: &Rc<E>,
-        tp: TPSpec<U>,
+        temperature_or_pressure: QuantityScalar<U>,
         x_lle: (f64, f64),
         tp_lim_lle: Option<QuantityScalar<U>>,
         npoints_vle: Option<usize>,
         npoints_lle: Option<usize>,
         bubble_dew_options: (SolverOptions, SolverOptions),
-    ) -> EosResult<Self>
+    ) -> EosResult<PhaseDiagramHetero<U, E>>
     where
         QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
     {
         let npoints_vle = npoints_vle.unwrap_or(DEFAULT_POINTS);
+        let tp = temperature_or_pressure.try_into()?;
 
         // calculate pure components
-        let vle_sat = PhaseEquilibrium::vle_pure_comps(eos, tp);
+        let vle_sat = PhaseEquilibrium::vle_pure_comps(eos, temperature_or_pressure);
         let vle_sat = [vle_sat[1].clone(), vle_sat[0].clone()];
 
         // calculate heteroazeotrope
@@ -477,7 +303,7 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
         let x_hetero = (vlle.liquid1().molefracs[0], vlle.liquid2().molefracs[0]);
 
         // calculate vapor liquid equilibria
-        let (dia1, dia2) = PhaseDiagramBinary::new_vlle(
+        let (dia1, dia2) = PhaseDiagram::calculate_vlle(
             eos,
             tp,
             npoints_vle,
@@ -493,10 +319,12 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
                     TPSpec::Pressure(_) => vlle.vapor().temperature,
                     TPSpec::Temperature(_) => vlle.vapor().pressure(Contributions::Total),
                 };
-                PhaseDiagramBinary::new_lle(
+                let x_feed = 0.5 * (x_hetero.0 + x_hetero.1);
+                let feed = arr1(&[x_feed, 1.0 - x_feed]) * U::reference_moles();
+                PhaseDiagram::lle(
                     eos,
-                    tp,
-                    0.5 * (x_hetero.0 + x_hetero.1),
+                    temperature_or_pressure,
+                    &feed,
                     tp_lim,
                     tp_hetero,
                     npoints_lle,
@@ -504,15 +332,17 @@ impl<U: EosUnit, E: EquationOfState> PhaseDiagramHetero<U, E> {
             })
             .transpose()?;
 
-        Ok(Self {
-            vle1: PhaseDiagramBinary { states: dia1 },
-            vle2: PhaseDiagramBinary { states: dia2 },
+        Ok(PhaseDiagramHetero {
+            vle1: PhaseDiagram { states: dia1 },
+            vle2: PhaseDiagram { states: dia2 },
             lle,
         })
     }
+}
 
-    pub fn vle(&self) -> PhaseDiagramBinary<U, E> {
-        PhaseDiagramBinary {
+impl<U: Clone, E> PhaseDiagramHetero<U, E> {
+    pub fn vle(&self) -> PhaseDiagram<U, E> {
+        PhaseDiagram {
             states: self
                 .vle1
                 .states
@@ -533,8 +363,27 @@ where
     QuantityScalar<U>: std::fmt::Display + std::fmt::LowerExp,
 {
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
+    /// system and given pressure.
+    pub fn heteroazeotrope(
+        eos: &Rc<E>,
+        temperature_or_pressure: QuantityScalar<U>,
+        x_init: (f64, f64),
+        options: SolverOptions,
+        bubble_dew_options: (SolverOptions, SolverOptions),
+    ) -> EosResult<Self> {
+        match TPSpec::try_from(temperature_or_pressure)? {
+            TPSpec::Temperature(t) => {
+                Self::heteroazeotrope_t(eos, t, x_init, options, bubble_dew_options)
+            }
+            TPSpec::Pressure(p) => {
+                Self::heteroazeotrope_p(eos, p, x_init, options, bubble_dew_options)
+            }
+        }
+    }
+
+    /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given temperature.
-    pub fn heteroazeotrope_t(
+    fn heteroazeotrope_t(
         eos: &Rc<E>,
         temperature: QuantityScalar<U>,
         x_init: (f64, f64),
@@ -544,22 +393,10 @@ where
         // calculate initial values using bubble point
         let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
         let x2 = arr1(&[x_init.1, 1.0 - x_init.1]);
-        let vle1 = PhaseEquilibrium::bubble_point_tx(
-            eos,
-            temperature,
-            None,
-            &x1,
-            None,
-            bubble_dew_options,
-        )?;
-        let vle2 = PhaseEquilibrium::bubble_point_tx(
-            eos,
-            temperature,
-            None,
-            &x2,
-            None,
-            bubble_dew_options,
-        )?;
+        let vle1 =
+            PhaseEquilibrium::bubble_point(eos, temperature, &x1, None, None, bubble_dew_options)?;
+        let vle2 =
+            PhaseEquilibrium::bubble_point(eos, temperature, &x2, None, None, bubble_dew_options)?;
         let mut l1 = vle1.liquid().clone();
         let mut l2 = vle2.liquid().clone();
         let p0 = (vle1.vapor().pressure(Contributions::Total)
@@ -685,7 +522,7 @@ where
 
     /// Calculate a heteroazeotrope (three phase equilbrium) for a binary
     /// system and given pressure.
-    pub fn heteroazeotrope_p(
+    fn heteroazeotrope_p(
         eos: &Rc<E>,
         pressure: QuantityScalar<U>,
         x_init: (f64, f64),
@@ -698,9 +535,9 @@ where
         let x1 = arr1(&[x_init.0, 1.0 - x_init.0]);
         let x2 = arr1(&[x_init.1, 1.0 - x_init.1]);
         let vle1 =
-            PhaseEquilibrium::bubble_point_px(eos, pressure, None, &x1, None, bubble_dew_options)?;
+            PhaseEquilibrium::bubble_point(eos, pressure, &x1, None, None, bubble_dew_options)?;
         let vle2 =
-            PhaseEquilibrium::bubble_point_px(eos, pressure, None, &x2, None, bubble_dew_options)?;
+            PhaseEquilibrium::bubble_point(eos, pressure, &x2, None, None, bubble_dew_options)?;
         let mut l1 = vle1.liquid().clone();
         let mut l2 = vle2.liquid().clone();
         let t0 = (vle1.vapor().temperature + vle2.vapor().temperature) * 0.5;
