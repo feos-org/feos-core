@@ -2,11 +2,12 @@ use super::{Derivative::*, PartialDerivative, State};
 use crate::equation_of_state::{EntropyScaling, EquationOfState, MolarWeight};
 use crate::errors::EosResult;
 use crate::EosUnit;
-use ndarray::{Array1, Array2};
+use ndarray::{arr1, Array1, Array2};
 use num_dual::DualNum;
 use quantity::{QuantityArray, QuantityArray1, QuantityArray2, QuantityScalar};
 use std::iter::FromIterator;
 use std::ops::{Add, Sub};
+use std::rc::Rc;
 
 #[derive(Clone, Copy)]
 pub(crate) enum Evaluate {
@@ -298,6 +299,32 @@ impl<U: EosUnit, E: EquationOfState> State<U, E> {
             / (U::gas_constant() * self.temperature))
             .into_value()
             .unwrap()
+    }
+
+    /// Logarithm of the fugacity coefficient of all components treated as pure substance at mixture temperature and pressure.
+    pub fn ln_phi_pure(&self) -> EosResult<Array1<f64>> {
+        let pressure = self.pressure(Contributions::Total);
+        (0..self.eos.components())
+            .map(|i| {
+                let eos = Rc::new(self.eos.subset(&[i]));
+                let state = Self::new_npt(
+                    &eos,
+                    self.temperature,
+                    pressure,
+                    &(arr1(&[1.0]) * U::reference_moles()),
+                    crate::DensityInitialization::Liquid,
+                )?;
+                Ok(state.ln_phi()[0])
+            })
+            .collect()
+    }
+
+    /// Activity coefficient $\ln \gamma_i = \ln \varphi_i(T, p, \mathbf{N}) - \ln \varphi_i(T, p)$
+    pub fn ln_symmetric_activity_coefficient(&self) -> EosResult<Array1<f64>> {
+        match self.eos.components() {
+            1 => Ok(arr1(&[0.0])),
+            _ => Ok(self.ln_phi() - &self.ln_phi_pure()?),
+        }
     }
 
     /// Partial derivative of the logarithm of the fugacity coefficient w.r.t. temperature: $\left(\frac{\partial\ln\varphi_i}{\partial T}\right)_{p,N_i}$
