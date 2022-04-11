@@ -25,7 +25,7 @@ use std::rc::Rc;
 /// ------
 /// RunTimeError
 ///     If the class does not implement all necessary methods.
-#[pyclass(name = "UserDefinedEos", unsendable)]
+#[pyclass(name = "Python", unsendable)]
 #[derive(Clone)]
 #[pyo3(text_signature = "(obj)")]
 pub struct PyUserDefinedEos(Rc<PyEoSObj>);
@@ -59,7 +59,6 @@ pub fn user_defined(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyStateD3DV3>()?;
     m.add_class::<PyUserDefinedEos>()?;
     m.add_class::<PyState>()?;
-    m.add_class::<PyPhaseEquilibrium>()?;
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
     Ok(())
