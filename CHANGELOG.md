@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2022-04-12
 ### Added
-- Added conversions between `ParameterError` -> `EosError` and `EosError` -> `FitError` to improve the error messages in some cases. [#40](https://github.com/feos-org/feos-core/pull/40)
+- Added conversions between `ParameterError` and `EosError` to improve the error messages in some cases. [#40](https://github.com/feos-org/feos-core/pull/40)
 - Added new struct `StateVec`, that gives easy access to properties of lists of states, e.g. in phase diagrams. [#48](https://github.com/feos-org/feos-core/pull/48)
 - Added `ln_symmetric_activity_coefficient` and `ln_phi_pure` to the list of state properties that can be calculated. [#50](https://github.com/feos-org/feos-core/pull/50)
 
@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `PhaseDiagramHetero::new_txy`, `PhaseDiagramHetero::new_pxy` -> `PhaseDiagram::binary_vlle`\
   which still returns an instance of `PhaseDiagramHetero`
 - Changed the internal implementation of the Peng-Robinson equation of state to use contributions like the more complex equations of state and removed the suggestion to overwrite the `evaluate_residual` function of `EquationOfState`. [#51](https://github.com/feos-org/feos-core/pull/51)
+- Moved the creation of the python module to the `build_wheel` auxilliary crate, so that only the relevant structs and macros are available for the dependents. [#47](https://github.com/feos-org/feos-core/pull/47)
+
+### Removed
+- Removed the `utils` module containing `DataSet` and `Estimator` in favor of a separate crate. [#47](https://github.com/feos-org/feos-core/pull/47)
 
 ### Packaging
 - Updated `pyo3` and `numpy` dependencies to 0.16.
