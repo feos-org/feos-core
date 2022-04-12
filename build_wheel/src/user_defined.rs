@@ -59,7 +59,6 @@ pub fn user_defined(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyStateD3DV3>()?;
     m.add_class::<PyUserDefinedEos>()?;
     m.add_class::<PyState>()?;
-    m.add_class::<PyPhaseEquilibrium>()?;
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
     Ok(())
