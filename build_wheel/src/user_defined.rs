@@ -25,7 +25,7 @@ use std::rc::Rc;
 /// ------
 /// RunTimeError
 ///     If the class does not implement all necessary methods.
-#[pyclass(name = "Python", unsendable)]
+#[pyclass(name = "UserDefinedEos", unsendable)]
 #[derive(Clone)]
 #[pyo3(text_signature = "(obj)")]
 pub struct PyUserDefinedEos(Rc<PyEoSObj>);
