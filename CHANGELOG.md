@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## [0.2.0] - 2022-03-09
+## [0.2.0] - 2022-04-12
 ### Added
 - Added conversions between `ParameterError` -> `EosError` and `EosError` -> `FitError` to improve the error messages in some cases. [#40](https://github.com/feos-org/feos-core/pull/40)
 - Added new struct `StateVec`, that gives easy access to properties of lists of states, e.g. in phase diagrams. [#48](https://github.com/feos-org/feos-core/pull/48)
@@ -19,16 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed methods of `StateBuilder` and the parameters in the `State` constructor in python to `molar_enthalpy`, `molar_entropy`, and `molar_internal_energy`.  [#35](https://github.com/feos-org/feos-core/pull/35)
 - Removed `PyContributions` and `PyVerbosity` in favor of a simpler implementation using `PyO3`'s new `#[pyclass]` for fieldless enums feature. [#41](https://github.com/feos-org/feos-core/pull/41)
 - Renamed `Contributions::Residual` to `Contributions::ResidualNvt` and `Contributions::ResidualP` to `Contributions::ResidualNpt`. [#43](https://github.com/feos-org/feos-core/pull/43)
-- Renamed macro `impl_vle_state!` to `impl_phase_equilibrium`. [#48](https://github.com/feos-org/feos-core/pull/48)
-- Removed `_t` and `_p` functions in favor of simpler interfaces. The kind of specification (temperature or pressure) is determined from the unit of the argument. Properties of the phase diagram are available from the `vapor` and `liquid` getters, that return `StateVec`s. [#48](https://github.com/feos-org/feos-core/pull/48)
-  - `PhaseEquilibrium::pure_t`, `PhaseEquilibrium::pure_p` -> `PhaseEquilibrium::Pure`
+- Renamed macro `impl_vle_state!` to `impl_phase_equilibrium!`. [#48](https://github.com/feos-org/feos-core/pull/48)
+- Removed `_t` and `_p` functions in favor of simpler interfaces. The kind of specification (temperature or pressure) is determined from the unit of the argument. [#48](https://github.com/feos-org/feos-core/pull/48)
+  - `PhaseEquilibrium::pure_t`, `PhaseEquilibrium::pure_p` -> `PhaseEquilibrium::pure`
   - `PhaseEquilibrium::vle_pure_comps_t`, `PhaseEquilibrium::vle_pure_comps_p` -> `PhaseEquilibrium::vle_pure_comps`\
   The `PhaseEquilibria` returned by this function now have the same number of components as the (mixture) eos, that it is called with.
   - `PhaseEquilibrium::bubble_point_tx`, `PhaseEquilibrium::bubble_point_px` -> `PhaseEquilibrium::bubble_point`
   - `PhaseEquilibrium::dew_point_tx`, `PhaseEquilibrium::dew_point_px` -> `PhaseEquilibrium::dew_point`
   - `PhaseEquilibrium::heteroazeotrope_t`, `PhaseEquilibrium::heteroazeotrope_p` -> `PhaseEquilibrium::heteroazeotrope`
   - `State::critical_point_binary_t`, `State::critical_point_binary_p` -> `State::crititcal_point_binary`
-- Combined `PhaseDiagramPure` and `PhaseDiagramBinary` into a single struct `PhaseDiagram` and renamed its constructors. [#48](https://github.com/feos-org/feos-core/pull/48)
+- Combined `PhaseDiagramPure` and `PhaseDiagramBinary` into a single struct `PhaseDiagram` and renamed its constructors.  Properties of the phase diagram are available from the `vapor` and `liquid` getters, that return `StateVec`s. [#48](https://github.com/feos-org/feos-core/pull/48)
   - `PhaseDiagramPure::new` -> `PhaseDiagram::pure`
   - `PhaseDiagramBinary::new_txy`, `PhaseDiagramBinary::new_pxy` -> `PhaseDiagram::binary_vle`
   - `PhaseDiagramBinary::new_txy_lle`, `PhaseDiagramBinary::new_pxy_lle` -> `PhaseDiagram::lle`
