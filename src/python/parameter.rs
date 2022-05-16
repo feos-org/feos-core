@@ -609,13 +609,13 @@ macro_rules! impl_parameter {
                 pure_records: Vec<PyPureRecord>,
                 binary_record: Option<&PyAny>,
             ) -> PyResult<Self> {
-                if let Some(binary_record) = binary_record {
-                    if let Ok(r) = binary_record.extract::<f64>() {
+                if let Some(br) = binary_record {
+                    if let Ok(r) = br.extract::<f64>() {
                         return Ok(Self(Rc::new(<$parameter>::new_binary(
                             pure_records.into_iter().map(|pr| pr.0).collect(),
-                            r.try_into().unwrap(),
+                            Some(r.try_into().unwrap()),
                         ))));
-                    } else if let Ok(r) = binary_record.extract::<PyBinaryRecord>() {
+                    } else if let Ok(r) = br.extract::<PyBinaryRecord>() {
                         return Ok(Self(Rc::new(<$parameter>::new_binary(
                             pure_records.into_iter().map(|pr| pr.0).collect(),
                             Some(r.0.model_record),
