@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
 use serde::{Deserialize, Serialize};
@@ -92,7 +94,7 @@ pub trait FromSegmentsBinary: Clone {
 /// A collection of parameters that model interactions between two
 /// substances or segments.
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct BinaryRecord<I, B> {
+pub struct BinaryRecord<I, B: TryFrom<f64>> {
     /// Identifier of the first component
     pub id1: I,
     /// Identifier of the second component
@@ -101,7 +103,7 @@ pub struct BinaryRecord<I, B> {
     pub model_record: B,
 }
 
-impl<I, B> BinaryRecord<I, B> {
+impl<I, B: TryFrom<f64>> BinaryRecord<I, B> {
     /// Crates a new `BinaryRecord`.
     pub fn new(id1: I, id2: I, model_record: B) -> Self {
         Self {
@@ -112,7 +114,7 @@ impl<I, B> BinaryRecord<I, B> {
     }
 }
 
-impl<I, B> std::fmt::Display for BinaryRecord<I, B>
+impl<I, B: TryFrom<f64>> std::fmt::Display for BinaryRecord<I, B>
 where
     I: std::fmt::Display,
     B: std::fmt::Display,

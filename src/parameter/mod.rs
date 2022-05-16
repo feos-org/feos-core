@@ -3,11 +3,11 @@
 use indexmap::IndexSet;
 use ndarray::Array2;
 use serde::de::DeserializeOwned;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::BufReader;
 use std::path::Path;
+use std::{collections::HashMap, convert::TryFrom};
 use thiserror::Error;
 
 mod chemical_record;
@@ -31,7 +31,7 @@ where
 {
     type Pure: Clone + DeserializeOwned + Default;
     type IdealGas: Clone + DeserializeOwned + Default;
-    type Binary: Clone + DeserializeOwned + Default;
+    type Binary: Clone + DeserializeOwned + Default + TryFrom<f64>;
 
     /// Creates parameters from records for pure substances and possibly binary parameters.
     fn from_records(
@@ -69,6 +69,38 @@ where
         &[PureRecord<Self::Pure, Self::IdealGas>],
         &Array2<Self::Binary>,
     );
+
+    /// Helper function to build matrix from list of records in correct order.
+    ///
+    /// If the identifiers in `binary_records` are not a subset of those in
+    /// `pure_records`, the `Default` implementation of Self::Binary is used.
+    fn binary_matrix_from_records(
+        pure_records: &Vec<PureRecord<Self::Pure, Self::IdealGas>>,
+        binary_records: &Vec<BinaryRecord<Identifier, Self::Binary>>,
+        search_option: IdentifierOption,
+    ) -> Array2<Self::Binary> {
+        // Build Hashmap (id, id) -> BinaryRecord
+        let binary_map: HashMap<(String, String), Self::Binary> = {
+            binary_records
+                .into_iter()
+                .filter_map(|br| {
+                    let id1 = br.id1.as_string(search_option);
+                    let id2 = br.id2.as_string(search_option);
+                    id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record.clone())))
+                })
+                .collect()
+        };
+        let n = pure_records.len();
+        Array2::from_shape_fn([n, n], |(i, j)| {
+            let id1 = pure_records[i].identifier.as_string(search_option).unwrap();
+            let id2 = pure_records[j].identifier.as_string(search_option).unwrap();
+            binary_map
+                .get(&(id1.clone(), id2.clone()))
+                .or_else(|| binary_map.get(&(id2, id1)))
+                .cloned()
+                .unwrap_or_default()
+        })
+    }
 
     /// Creates parameters from substance information stored in json files.
     fn from_json<P>(

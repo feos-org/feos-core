@@ -210,68 +210,77 @@ impl PyChemicalRecord {
 
 impl_json_handling!(PyChemicalRecord);
 
-/// Create a record for a binary interaction parameter.
-///
-/// Parameters
-/// ----------
-/// id1 : Identifier
-///     The identifier of the first component.
-/// id2 : Identifier
-///     The identifier of the second component.
-/// model_record : float
-///     The binary interaction parameter.
-///
-/// Returns
-/// -------
-/// BinaryRecord
-#[pyclass(name = "BinaryRecord")]
-#[pyo3(text_signature = "(id1, id2, model_record)")]
-#[derive(Clone)]
-pub struct PyBinaryRecord(pub BinaryRecord<Identifier, f64>);
+#[macro_export]
+macro_rules! impl_binary_record {
+    ($model_record:ident, $py_model_record:ident) => {
+        /// Create a record for a binary interaction parameter.
+        ///
+        /// Parameters
+        /// ----------
+        /// id1 : Identifier
+        ///     The identifier of the first component.
+        /// id2 : Identifier
+        ///     The identifier of the second component.
+        /// model_record : float
+        ///     The binary interaction parameter.
+        ///
+        /// Returns
+        /// -------
+        /// BinaryRecord
+        #[pyclass(name = "BinaryRecord")]
+        #[pyo3(text_signature = "(id1, id2, model_record)")]
+        #[derive(Clone)]
+        pub struct PyBinaryRecord(pub BinaryRecord<Identifier, $model_record>);
 
-#[pymethods]
-impl PyBinaryRecord {
-    #[new]
-    fn new(id1: PyIdentifier, id2: PyIdentifier, model_record: f64) -> PyResult<Self> {
-        Ok(Self(BinaryRecord::new(id1.0, id2.0, model_record)))
-    }
+        #[pymethods]
+        impl PyBinaryRecord {
+            #[new]
+            fn new(
+                id1: PyIdentifier,
+                id2: PyIdentifier,
+                model_record: $py_model_record,
+            ) -> PyResult<Self> {
+                Ok(Self(BinaryRecord::new(id1.0, id2.0, model_record.0)))
+            }
 
-    #[getter]
-    fn get_id1(&self) -> PyIdentifier {
-        PyIdentifier(self.0.id1.clone())
-    }
+            #[getter]
+            fn get_id1(&self) -> PyIdentifier {
+                PyIdentifier(self.0.id1.clone())
+            }
 
-    #[setter]
-    fn set_id1(&mut self, id1: PyIdentifier) {
-        self.0.id1 = id1.0;
-    }
+            #[setter]
+            fn set_id1(&mut self, id1: PyIdentifier) {
+                self.0.id1 = id1.0;
+            }
 
-    #[getter]
-    fn get_id2(&self) -> PyIdentifier {
-        PyIdentifier(self.0.id2.clone())
-    }
+            #[getter]
+            fn get_id2(&self) -> PyIdentifier {
+                PyIdentifier(self.0.id2.clone())
+            }
 
-    #[setter]
-    fn set_id2(&mut self, id2: PyIdentifier) {
-        self.0.id2 = id2.0;
-    }
+            #[setter]
+            fn set_id2(&mut self, id2: PyIdentifier) {
+                self.0.id2 = id2.0;
+            }
 
-    #[getter]
-    fn get_model_record(&self) -> f64 {
-        self.0.model_record
-    }
+            #[getter]
+            fn get_model_record(&self) -> $py_model_record {
+                $py_model_record(self.0.model_record.clone())
+            }
 
-    #[setter]
-    fn set_model_record(&mut self, model_record: f64) {
-        self.0.model_record = model_record;
-    }
+            #[setter]
+            fn set_model_record(&mut self, model_record: $py_model_record) {
+                self.0.model_record = model_record.0;
+            }
 
-    fn __repr__(&self) -> PyResult<String> {
-        Ok(self.0.to_string())
-    }
+            fn __repr__(&self) -> PyResult<String> {
+                Ok(self.0.to_string())
+            }
+        }
+
+        impl_json_handling!(PyBinaryRecord);
+    };
 }
-
-impl_json_handling!(PyBinaryRecord);
 
 /// Create a record for a binary segment interaction parameter.
 ///
@@ -546,18 +555,31 @@ macro_rules! impl_parameter {
             /// ----------
             /// pure_records : [PureRecord]
             ///     A list of pure component parameters.
-            /// binary_records : numpy.ndarray[float]
-            ///     A matrix of binary interaction parameters.
+            /// binary_records : numpy.ndarray[float] or List[BinaryRecord]
+            ///     A matrix of binary interaction parameters or a list
+            ///     containing records for binary interactions.
             #[staticmethod]
             #[pyo3(text_signature = "(pure_records, binary_records)")]
             fn from_records(
                 pure_records: Vec<PyPureRecord>,
-                binary_records: &PyArray2<f64>,
-            ) -> Self {
-                Self(Rc::new(<$parameter>::from_records(
-                    pure_records.into_iter().map(|pr| pr.0).collect(),
-                    binary_records.to_owned_array().mapv(f64::into),
-                )))
+                binary_records: &PyAny,
+            ) -> PyResult<Self> {
+                let prs = pure_records.into_iter().map(|pr| pr.0).collect();
+                let brs = if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
+                    Ok(br.to_owned_array().mapv(|r| r.try_into().unwrap()))
+                } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
+                    let brs = br.iter().map(|br| br.0.clone()).collect();
+                    Ok(<$parameter>::binary_matrix_from_records(
+                        &prs,
+                        &brs,
+                        IdentifierOption::Cas,
+                    ))
+                } else {
+                    Err(PyErr::new::<PyTypeError, _>(format!(
+                        "Could not parse binary input! When using BinaryRecords, make sure CAS numbers are consistent."
+                    )))
+                };
+                Ok(Self(Rc::new(<$parameter>::from_records(prs, brs.unwrap()))))
             }
 
             /// Creates parameters for a pure component from a pure record.
@@ -573,21 +595,41 @@ macro_rules! impl_parameter {
             }
 
             /// Creates parameters for a binary system from pure records and an optional
-            /// binary interaction parameter.
+            /// binary interaction parameter or binary interaction parameter record.
             ///
             /// Parameters
             /// ----------
             /// pure_records : [PureRecord]
             ///     A list of pure component parameters.
-            /// binary_record : float, optional
-            ///     The binary interaction parameter.
+            /// binary_record : float or BinaryRecord, optional
+            ///     The binary interaction parameter or binary interaction record.
             #[staticmethod]
             #[pyo3(text_signature = "(pure_records, binary_record)")]
-            fn new_binary(pure_records: Vec<PyPureRecord>, binary_record: Option<f64>) -> Self {
-                Self(Rc::new(<$parameter>::new_binary(
+            fn new_binary(
+                pure_records: Vec<PyPureRecord>,
+                binary_record: Option<&PyAny>,
+            ) -> PyResult<Self> {
+                if let Some(binary_record) = binary_record {
+                    if let Ok(r) = binary_record.extract::<f64>() {
+                        return Ok(Self(Rc::new(<$parameter>::new_binary(
+                            pure_records.into_iter().map(|pr| pr.0).collect(),
+                            r.try_into().unwrap(),
+                        ))));
+                    } else if let Ok(r) = binary_record.extract::<PyBinaryRecord>() {
+                        return Ok(Self(Rc::new(<$parameter>::new_binary(
+                            pure_records.into_iter().map(|pr| pr.0).collect(),
+                            Some(r.0.model_record),
+                        ))));
+                    } else {
+                        return Err(PyErr::new::<PyTypeError, _>(format!(
+                            "Could not parse binary input! When using BinaryRecords, make sure CAS numbers are consistent."
+                        )));
+                    }
+                }
+                Ok(Self(Rc::new(<$parameter>::new_binary(
                     pure_records.into_iter().map(|pr| pr.0).collect(),
-                    binary_record.map(f64::into),
-                )))
+                    None,
+                ))))
             }
 
             /// Creates parameters from json files.
@@ -653,6 +695,15 @@ macro_rules! impl_parameter {
                     binary_path,
                     io,
                 )?)))
+            }
+
+            #[getter]
+            fn get_pure_records(&self) -> Vec<PyPureRecord> {
+                self.0
+                    .records().0
+                    .iter()
+                    .map(|r| PyPureRecord(r.clone()))
+                    .collect()
             }
         }
     };
