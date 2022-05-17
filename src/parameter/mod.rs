@@ -1,7 +1,7 @@
 //! Structures and traits that can be used to build model parameters for equations of state.
 
 use indexmap::IndexSet;
-use ndarray::{Array1, Array2};
+use ndarray::Array2;
 use serde::de::DeserializeOwned;
 use std::fs::File;
 use std::io;
