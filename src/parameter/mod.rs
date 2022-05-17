@@ -1,7 +1,7 @@
 //! Structures and traits that can be used to build model parameters for equations of state.
 
 use indexmap::IndexSet;
-use ndarray::Array2;
+use ndarray::{Array1, Array2};
 use serde::de::DeserializeOwned;
 use std::fs::File;
 use std::io;
@@ -79,7 +79,7 @@ where
         binary_records: &Vec<BinaryRecord<Identifier, Self::Binary>>,
         search_option: IdentifierOption,
     ) -> Array2<Self::Binary> {
-        // Build Hashmap (id, id) -> BinaryRecord
+        // Build Hashmap (id, id) -> BinarƒRecord
         let binary_map: HashMap<(String, String), Self::Binary> = {
             binary_records
                 .into_iter()
@@ -167,41 +167,20 @@ where
             let msg = format!("{:?}", missing);
             return Err(ParameterError::ComponentsNotFound(msg));
         };
-        let p: Vec<_> = queried
+        let p = queried
             .iter()
             .filter_map(|identifier| record_map.remove(&identifier.clone()))
             .collect();
 
-        // Read binary records from file if provided
-        let binary_map = if let Some(path) = file_binary {
+        let binary_records = if let Some(path) = file_binary {
             let file = File::open(path)?;
             let reader = BufReader::new(file);
-            let binary_records: Vec<BinaryRecord<Identifier, Self::Binary>> =
-                serde_json::from_reader(reader)?;
-            binary_records
-                .into_iter()
-                .filter_map(|br| {
-                    let id1 = br.id1.as_string(search_option);
-                    let id2 = br.id2.as_string(search_option);
-                    id1.and_then(|id1| id2.map(|id2| ((id1, id2), br.model_record)))
-                })
-                .collect()
+            serde_json::from_reader(reader)?
         } else {
-            HashMap::with_capacity(0)
+            Vec::new()
         };
-
-        let n = p.len();
-        let br = Array2::from_shape_fn([n, n], |(i, j)| {
-            let id1 = p[i].identifier.as_string(search_option).unwrap();
-            let id2 = p[j].identifier.as_string(search_option).unwrap();
-            binary_map
-                .get(&(id1.clone(), id2.clone()))
-                .or_else(|| binary_map.get(&(id2, id1)))
-                .cloned()
-                .unwrap_or_default()
-        });
-
-        Ok(Self::from_records(p, br))
+        let record_matrix = Self::binary_matrix_from_records(&p, &binary_records, search_option);
+        Ok(Self::from_records(p, record_matrix))
     }
 
     /// Creates parameters from the molecular structure and segment information.
@@ -378,18 +357,30 @@ mod test {
         a: f64,
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+    struct MyBinaryModel {
+        b: f64,
+    }
+
+    impl TryFrom<f64> for MyBinaryModel {
+        type Error = &'static str;
+        fn try_from(f: f64) -> Result<Self, Self::Error> {
+            Ok(Self { b: f })
+        }
+    }
+
     struct MyParameter {
         pure_records: Vec<PureRecord<MyPureModel, JobackRecord>>,
-        binary_records: Array2<f64>,
+        binary_records: Array2<MyBinaryModel>,
     }
 
     impl Parameter for MyParameter {
         type Pure = MyPureModel;
         type IdealGas = JobackRecord;
-        type Binary = f64;
+        type Binary = MyBinaryModel;
         fn from_records(
             pure_records: Vec<PureRecord<MyPureModel, JobackRecord>>,
-            binary_records: Array2<f64>,
+            binary_records: Array2<MyBinaryModel>,
         ) -> Self {
             Self {
                 pure_records,
@@ -397,14 +388,19 @@ mod test {
             }
         }
 
-        fn records(&self) -> (&[PureRecord<MyPureModel, JobackRecord>], &Array2<f64>) {
+        fn records(
+            &self,
+        ) -> (
+            &[PureRecord<MyPureModel, JobackRecord>],
+            &Array2<MyBinaryModel>,
+        ) {
             (&self.pure_records, &self.binary_records)
         }
     }
 
     #[test]
     fn from_records() {
-        let r = r#"
+        let pr_json = r#"
         [
             {
                 "identifier": {
@@ -414,12 +410,166 @@ mod test {
                 "model_record": {
                     "a": 0.1
                 }
+            },
+            {
+                "identifier": {
+                    "cas": "678-9-1"
+                },
+                "molarweight": 32.08412,
+                "model_record": {
+                    "a": 0.2
+                }
             }
         ]
         "#;
-        let records: Vec<PureRecord<MyPureModel, JobackRecord>> =
-            serde_json::from_str(r).expect("Unable to parse json.");
-        let p = MyParameter::from_records(records, Array2::zeros((1, 1)));
-        assert_eq!(p.pure_records[0].identifier.cas, "123-4-5")
+        let br_json = r#"
+        [
+            {
+                "id1": {
+                    "cas": "123-4-5"
+                },
+                "id2": {
+                    "cas": "678-9-1"
+                },
+                "model_record": {
+                    "b": 12.0
+                }
+            }
+        ]
+        "#;
+        let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
+        let binary_records = serde_json::from_str(br_json).expect("Unable to parse json.");
+        let binary_matrix = MyParameter::binary_matrix_from_records(
+            &pure_records,
+            &binary_records,
+            IdentifierOption::Cas,
+        );
+        let p = MyParameter::from_records(pure_records, binary_matrix);
+
+        assert_eq!(p.pure_records[0].identifier.cas, "123-4-5");
+        assert_eq!(p.pure_records[1].identifier.cas, "678-9-1");
+        assert_eq!(p.binary_records[[0, 1]].b, 12.0)
+    }
+
+    #[test]
+    fn from_records_missing_binary() {
+        let pr_json = r#"
+        [
+            {
+                "identifier": {
+                    "cas": "123-4-5"
+                },
+                "molarweight": 16.0426,
+                "model_record": {
+                    "a": 0.1
+                }
+            },
+            {
+                "identifier": {
+                    "cas": "678-9-1"
+                },
+                "molarweight": 32.08412,
+                "model_record": {
+                    "a": 0.2
+                }
+            }
+        ]
+        "#;
+        let br_json = r#"
+        [
+            {
+                "id1": {
+                    "cas": "123-4-5"
+                },
+                "id2": {
+                    "cas": "000-00-0"
+                },
+                "model_record": {
+                    "b": 12.0
+                }
+            }
+        ]
+        "#;
+        let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
+        let binary_records = serde_json::from_str(br_json).expect("Unable to parse json.");
+        let binary_matrix = MyParameter::binary_matrix_from_records(
+            &pure_records,
+            &binary_records,
+            IdentifierOption::Cas,
+        );
+        let p = MyParameter::from_records(pure_records, binary_matrix);
+
+        assert_eq!(p.pure_records[0].identifier.cas, "123-4-5");
+        assert_eq!(p.pure_records[1].identifier.cas, "678-9-1");
+        assert_eq!(p.binary_records[[0, 1]], MyBinaryModel::default());
+        assert_eq!(p.binary_records[[0, 1]].b, 0.0)
+    }
+
+    #[test]
+    fn from_records_correct_binary_order() {
+        let pr_json = r#"
+        [
+            {
+                "identifier": {
+                    "cas": "000-0-0"
+                },
+                "molarweight": 32.08412,
+                "model_record": {
+                    "a": 0.2
+                }
+            },
+            {
+                "identifier": {
+                    "cas": "123-4-5"
+                },
+                "molarweight": 16.0426,
+                "model_record": {
+                    "a": 0.1
+                }
+            },
+            {
+                "identifier": {
+                    "cas": "678-9-1"
+                },
+                "molarweight": 32.08412,
+                "model_record": {
+                    "a": 0.2
+                }
+            }
+        ]
+        "#;
+        let br_json = r#"
+        [
+            {
+                "id1": {
+                    "cas": "123-4-5"
+                },
+                "id2": {
+                    "cas": "678-9-1"
+                },
+                "model_record": {
+                    "b": 12.0
+                }
+            }
+        ]
+        "#;
+        let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
+        let binary_records = serde_json::from_str(br_json).expect("Unable to parse json.");
+        let binary_matrix = MyParameter::binary_matrix_from_records(
+            &pure_records,
+            &binary_records,
+            IdentifierOption::Cas,
+        );
+        let p = MyParameter::from_records(pure_records, binary_matrix);
+
+        assert_eq!(p.pure_records[0].identifier.cas, "000-0-0");
+        assert_eq!(p.pure_records[1].identifier.cas, "123-4-5");
+        assert_eq!(p.pure_records[2].identifier.cas, "678-9-1");
+        assert_eq!(p.binary_records[[0, 1]], MyBinaryModel::default());
+        assert_eq!(p.binary_records[[1, 0]], MyBinaryModel::default());
+        assert_eq!(p.binary_records[[0, 2]], MyBinaryModel::default());
+        assert_eq!(p.binary_records[[2, 0]], MyBinaryModel::default());
+        assert_eq!(p.binary_records[[2, 1]].b, 12.0);
+        assert_eq!(p.binary_records[[1, 2]].b, 12.0);
     }
 }

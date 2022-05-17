@@ -114,7 +114,7 @@ macro_rules! impl_state {
             ///
             /// Parameters
             /// ----------
-            /// eos: Eos
+            /// eos: EquationOfState
             ///     The equation of state to use.
             /// initial_temperature: SINumber, optional
             ///     The initial temperature.
@@ -146,7 +146,7 @@ macro_rules! impl_state {
             ///
             /// Parameters
             /// ----------
-            /// eos: Eos
+            /// eos: EquationOfState
             ///     The equation of state to use.
             /// moles: SIArray1, optional
             ///     Amount of substance of each component.
@@ -186,7 +186,7 @@ macro_rules! impl_state {
             ///
             /// Parameters
             /// ----------
-            /// eos: Eos
+            /// eos: EquationOfState
             ///     The equation of state to use.
             /// temperature_or_pressure: SINumber
             ///     temperature_or_pressure.

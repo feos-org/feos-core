@@ -13,7 +13,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
@@ -60,7 +60,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature : SINumber
             ///     The system temperature.
@@ -114,7 +114,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature_or_pressure.
@@ -173,7 +173,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
@@ -257,7 +257,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
@@ -279,7 +279,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature : SINumber
             ///     The system temperature.
@@ -301,7 +301,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// pressure : SINumber
             ///     The system pressure.
@@ -339,7 +339,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature_or_pressure : SINumber
             ///     The system temperature or pressure.
@@ -558,7 +558,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature_or_pressure: SINumber
             ///     The constant temperature or pressure.
@@ -616,7 +616,7 @@ macro_rules! impl_phase_equilibrium {
             ///
             /// Parameters
             /// ----------
-            /// eos : $py_eos
+            /// eos : EquationOfState
             ///     The equation of state.
             /// temperature_or_pressure: SINumber
             ///     The consant temperature or pressure.
