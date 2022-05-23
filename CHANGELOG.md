@@ -6,7 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Added `TryFrom<f64>` trait bound to the `Binary` associated type in the `Parameter` trait and `impl_binary_record` macro. [#54](https://github.com/feos-org/feos-core/pull/54)
 - Added `pure_records` getter in the `impl_parameter` macro. [#54](https://github.com/feos-org/feos-core/pull/54)
 
 ### Changed
