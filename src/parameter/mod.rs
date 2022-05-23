@@ -3,11 +3,11 @@
 use indexmap::IndexSet;
 use ndarray::Array2;
 use serde::de::DeserializeOwned;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::BufReader;
 use std::path::Path;
-use std::{collections::HashMap, convert::TryFrom};
 use thiserror::Error;
 
 mod chemical_record;
@@ -31,7 +31,7 @@ where
 {
     type Pure: Clone + DeserializeOwned + Default;
     type IdealGas: Clone + DeserializeOwned + Default;
-    type Binary: Clone + DeserializeOwned + Default + TryFrom<f64>;
+    type Binary: Clone + DeserializeOwned + Default;
 
     /// Creates parameters from records for pure substances and possibly binary parameters.
     fn from_records(
@@ -76,13 +76,13 @@ where
     /// `pure_records`, the `Default` implementation of Self::Binary is used.
     fn binary_matrix_from_records(
         pure_records: &Vec<PureRecord<Self::Pure, Self::IdealGas>>,
-        binary_records: &Vec<BinaryRecord<Identifier, Self::Binary>>,
+        binary_records: &[BinaryRecord<Identifier, Self::Binary>],
         search_option: IdentifierOption,
     ) -> Array2<Self::Binary> {
-        // Build Hashmap (id, id) -> BinarƒRecord
+        // Build Hashmap (id, id) -> BinaryRecord
         let binary_map: HashMap<(String, String), Self::Binary> = {
             binary_records
-                .into_iter()
+                .iter()
                 .filter_map(|br| {
                     let id1 = br.id1.as_string(search_option);
                     let id2 = br.id2.as_string(search_option);
@@ -351,6 +351,7 @@ mod test {
     use super::*;
     use crate::joback::JobackRecord;
     use serde::{Deserialize, Serialize};
+    use std::convert::TryFrom;
 
     #[derive(Debug, Clone, Serialize, Deserialize, Default)]
     struct MyPureModel {
@@ -438,7 +439,7 @@ mod test {
         ]
         "#;
         let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
-        let binary_records = serde_json::from_str(br_json).expect("Unable to parse json.");
+        let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
         let binary_matrix = MyParameter::binary_matrix_from_records(
             &pure_records,
             &binary_records,
@@ -491,7 +492,7 @@ mod test {
         ]
         "#;
         let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
-        let binary_records = serde_json::from_str(br_json).expect("Unable to parse json.");
+        let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
         let binary_matrix = MyParameter::binary_matrix_from_records(
             &pure_records,
             &binary_records,
@@ -554,7 +555,7 @@ mod test {
         ]
         "#;
         let pure_records = serde_json::from_str(pr_json).expect("Unable to parse json.");
-        let binary_records = serde_json::from_str(br_json).expect("Unable to parse json.");
+        let binary_records: Vec<_> = serde_json::from_str(br_json).expect("Unable to parse json.");
         let binary_matrix = MyParameter::binary_matrix_from_records(
             &pure_records,
             &binary_records,

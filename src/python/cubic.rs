@@ -7,8 +7,8 @@ use crate::python::joback::PyJobackRecord;
 use crate::python::parameter::PyIdentifier;
 use crate::*;
 use numpy::PyReadonlyArray2;
-use pyo3::prelude::*;
 use pyo3::exceptions::PyTypeError;
+use pyo3::prelude::*;
 use std::convert::{TryFrom, TryInto};
 use std::rc::Rc;
 
@@ -38,11 +38,7 @@ impl_pure_record!(
     PyJobackRecord
 );
 
-/// A pure substance parameter for the Peng-Robinson equation of state.
-#[pyclass(name = "BinaryPengRobinsonRecord", unsendable)]
-#[derive(Clone)]
-pub(crate) struct PyBinaryPengRobinsonRecord(f64);
-impl_binary_record!(f64, PyBinaryPengRobinsonRecord);
+impl_binary_record!();
 
 /// Create a set of Peng-Robinson parameters from records.
 ///
