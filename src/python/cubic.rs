@@ -59,9 +59,6 @@ impl_binary_record!();
 /// -------
 /// PengRobinsonParameters
 #[pyclass(name = "PengRobinsonParameters", unsendable)]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PyPengRobinsonParameters(pub Rc<PengRobinsonParameters>);
 

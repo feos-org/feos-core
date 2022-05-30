@@ -227,7 +227,7 @@ macro_rules! impl_binary_record {
         ///     The identifier of the first component.
         /// id2 : Identifier
         ///     The identifier of the second component.
-        /// model_record : float
+        /// model_record : float or BinaryModelRecord
         ///     The binary interaction parameter.
         ///
         /// Returns
@@ -241,12 +241,16 @@ macro_rules! impl_binary_record {
         #[pymethods]
         impl PyBinaryRecord {
             #[new]
-            fn new(
-                id1: PyIdentifier,
-                id2: PyIdentifier,
-                model_record: $py_model_record,
-            ) -> PyResult<Self> {
-                Ok(Self(BinaryRecord::new(id1.0, id2.0, model_record.0)))
+            fn new(id1: PyIdentifier, id2: PyIdentifier, model_record: &PyAny) -> PyResult<Self> {
+                if let Ok(mr) = model_record.extract::<f64>() {
+                    Ok(Self(BinaryRecord::new(id1.0, id2.0, mr.try_into()?)))
+                } else if let Ok(mr) = model_record.extract::<$py_model_record>() {
+                    Ok(Self(BinaryRecord::new(id1.0, id2.0, mr.0)))
+                } else {
+                    Err(PyErr::new::<PyTypeError, _>(format!(
+                        "Could not parse model_record input!"
+                    )))
+                }
             }
 
             #[getter]
@@ -270,13 +274,26 @@ macro_rules! impl_binary_record {
             }
 
             #[getter]
-            fn get_model_record(&self) -> $py_model_record {
-                $py_model_record(self.0.model_record.clone())
+            fn get_model_record(&self, py: Python) -> PyObject {
+                if let Ok(mr) = f64::try_from(self.0.model_record) {
+                    mr.to_object(py)
+                } else {
+                    $py_model_record(self.0.model_record.clone()).into_py(py)
+                }
             }
 
             #[setter]
-            fn set_model_record(&mut self, model_record: $py_model_record) {
-                self.0.model_record = model_record.0;
+            fn set_model_record(&mut self, model_record: &PyAny) -> PyResult<()> {
+                if let Ok(mr) = model_record.extract::<f64>() {
+                    self.0.model_record = mr.try_into()?;
+                } else if let Ok(mr) = model_record.extract::<$py_model_record>() {
+                    self.0.model_record = mr.0;
+                } else {
+                    return Err(PyErr::new::<PyTypeError, _>(format!(
+                        "Could not parse model_record input!"
+                    )));
+                }
+                Ok(())
             }
 
             fn __repr__(&self) -> PyResult<String> {

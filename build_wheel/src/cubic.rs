@@ -1,5 +1,7 @@
 use feos_core::cubic::PengRobinson;
-use feos_core::python::cubic::{PyPengRobinsonParameters, PyPengRobinsonRecord, PyPureRecord};
+use feos_core::python::cubic::{
+    PyBinaryRecord, PyPengRobinsonParameters, PyPengRobinsonRecord, PyPureRecord,
+};
 use feos_core::*;
 use numpy::convert::ToPyArray;
 use numpy::{PyArray1, PyArray2};
@@ -46,6 +48,7 @@ pub fn cubic(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyPengRobinsonParameters>()?;
     m.add_class::<PyPengRobinsonRecord>()?;
     m.add_class::<PyPureRecord>()?;
+    m.add_class::<PyBinaryRecord>()?;
     m.add_class::<PyState>()?;
     m.add_class::<PyPhaseDiagram>()?;
     m.add_class::<PyPhaseEquilibrium>()?;
