@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- Added `pure_records` getter in the `impl_parameter` macro. [#54](https://github.com/feos-org/feos-core/pull/54)
+
+### Changed
+- Changed datatype for binary parameters in interfaces of the `from_records` and `new_binary` methods for parameters to take either numpy arrays of `f64` or a list of `BinaryRecord` as input. [#54](https://github.com/feos-org/feos-core/pull/54)
 
 ## [0.2.0] - 2022-04-12
 ### Added
