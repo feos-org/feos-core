@@ -316,8 +316,7 @@ mod tests {
         let propane = mixture[0].clone();
         let tc = propane.model_record.tc;
         let pc = propane.model_record.pc;
-        let parameters =
-            PengRobinsonParameters::from_records(vec![propane.clone()], Array2::zeros((1, 1)));
+        let parameters = PengRobinsonParameters::from_records(vec![propane], Array2::zeros((1, 1)));
         let pr = Rc::new(PengRobinson::new(Rc::new(parameters)));
         let options = SolverOptions::new().verbosity(Verbosity::Iter);
         let cp = State::critical_point(&pr, None, None, options)?;

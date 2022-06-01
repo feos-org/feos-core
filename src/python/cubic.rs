@@ -1,12 +1,15 @@
 use crate::cubic::{PengRobinsonParameters, PengRobinsonRecord};
 use crate::joback::JobackRecord;
-use crate::parameter::{IdentifierOption, Parameter, ParameterError, PureRecord};
+use crate::parameter::{
+    BinaryRecord, Identifier, IdentifierOption, Parameter, ParameterError, PureRecord,
+};
 use crate::python::joback::PyJobackRecord;
 use crate::python::parameter::PyIdentifier;
 use crate::*;
-use numpy::PyArray2;
+use numpy::PyReadonlyArray2;
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::rc::Rc;
 
 /// A pure substance parameter for the Peng-Robinson equation of state.
@@ -35,6 +38,8 @@ impl_pure_record!(
     PyJobackRecord
 );
 
+impl_binary_record!();
+
 /// Create a set of Peng-Robinson parameters from records.
 ///
 /// Parameters
@@ -54,9 +59,6 @@ impl_pure_record!(
 /// -------
 /// PengRobinsonParameters
 #[pyclass(name = "PengRobinsonParameters", unsendable)]
-#[pyo3(
-    text_signature = "(pure_records, binary_records=None, substances=None, search_option='Name')"
-)]
 #[derive(Clone)]
 pub struct PyPengRobinsonParameters(pub Rc<PengRobinsonParameters>);
 
