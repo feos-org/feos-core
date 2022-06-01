@@ -543,15 +543,8 @@ macro_rules! impl_phase_equilibrium {
             ///     Keys: property names. Values: property for each state.
             pub fn to_dict(&self) -> PyResult<HashMap<String, Vec<f64>>> {
                 let n = self.0.states[0].liquid().eos.components();
-                let mut dict = HashMap::with_capacity(20);
-                if n == 1 {
-                    dict.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value()?.into_raw_vec());
-                    dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value()?.into_raw_vec());
-                } else {
-                    dict.insert(String::from("temperature vapor"), (self.0.vapor().temperature() / KELVIN).into_value()?.into_raw_vec());
-                    dict.insert(String::from("temperature liquid"), (self.0.liquid().temperature() / KELVIN).into_value()?.into_raw_vec());
-                    dict.insert(String::from("pressure vapor"), (self.0.vapor().pressure() / PASCAL).into_value()?.into_raw_vec());
-                    dict.insert(String::from("pressure liquid"), (self.0.liquid().pressure() / PASCAL).into_value()?.into_raw_vec());
+                let mut dict = HashMap::with_capacity(8 + 2 * n);
+                if n != 1 {
                     let xs = self.0.liquid().molefracs();
                     let ys = self.0.vapor().molefracs();
                     for i in 0..n {
@@ -559,6 +552,8 @@ macro_rules! impl_phase_equilibrium {
                         dict.insert(String::from(format!("y{}", i)), ys.column(i).to_vec());
                     }
                 }
+                dict.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value()?.into_raw_vec());
+                dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value()?.into_raw_vec());
                 dict.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
                 dict.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
                 dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy() / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
