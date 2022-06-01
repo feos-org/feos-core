@@ -526,10 +526,10 @@ macro_rules! impl_state {
             }
 
             /// Return logarithmic pure substance fugacity coefficient.
-            /// 
+            ///
             /// For each component, the hypothetical liquid fugacity coefficient
             /// at mixture temperature and pressure is computed.
-            /// 
+            ///
             /// Returns
             /// -------
             /// numpy.ndarray
@@ -539,7 +539,7 @@ macro_rules! impl_state {
             }
 
             /// Return logarithmic symmetric activity coefficient.
-            /// 
+            ///
             /// Returns
             /// -------
             /// numpy.ndarray
@@ -977,13 +977,24 @@ macro_rules! impl_state {
 
         impl From<StateVec<'_, SIUnit, $eos>> for PyStateVec {
             fn from(vec: StateVec<SIUnit, $eos>) -> Self {
-                Self(vec.states.iter().map(|&s| s.clone()).collect())
+                Self(vec.into_iter().map(|s| s.clone()).collect())
             }
         }
 
         impl<'a> From<&'a PyStateVec> for StateVec<'a, SIUnit, $eos> {
             fn from(vec: &'a PyStateVec) -> Self {
-                Self { states: vec.0.iter().collect() }
+                Self(vec.0.iter().collect())
+            }
+        }
+
+        #[pymethods]
+        impl PyStateVec {
+            fn __len__(&self) -> PyResult<usize> {
+                Ok(self.0.len())
+            }
+
+            fn __getitem__(&self, idx: isize) -> PyResult<PyState> {
+                Ok(PyState(self.0[idx as usize].clone()))
             }
         }
 
