@@ -529,8 +529,8 @@ macro_rules! impl_phase_equilibrium {
 
             /// Returns the phase diagram as dictionary.
             ///
-            /// Note
-            /// ----
+            /// Units
+            /// -----
             /// temperature : K
             /// pressure : Pa
             /// densities : mol / m³
@@ -541,6 +541,12 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// dict[str, list[float]]
             ///     Keys: property names. Values: property for each state.
+            /// 
+            /// Notes
+            /// -----
+            /// xi: liquid molefraction of component i
+            /// yi: vapor molefraction of component i
+            /// i: component index according to order in parameters.
             pub fn to_dict(&self) -> PyResult<HashMap<String, Vec<f64>>> {
                 let n = self.0.states[0].liquid().eos.components();
                 let mut dict = HashMap::with_capacity(8 + 2 * n);

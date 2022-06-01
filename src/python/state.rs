@@ -994,7 +994,16 @@ macro_rules! impl_state {
             }
 
             fn __getitem__(&self, idx: isize) -> PyResult<PyState> {
-                Ok(PyState(self.0[idx as usize].clone()))
+                let i = if idx < 0 {
+                    self.0.len() as isize + idx
+                } else {
+                    idx
+                };
+                if (0..self.0.len()).contains(&(i as usize)) {
+                    Ok(PyState(self.0[i as usize].clone()))
+                } else {
+                    Err(PyIndexError::new_err(format!("StateVec index out of range")))
+                }
             }
         }
 
