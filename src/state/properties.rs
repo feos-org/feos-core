@@ -6,7 +6,7 @@ use ndarray::{arr1, Array1, Array2};
 use num_dual::DualNum;
 use quantity::{QuantityArray, QuantityArray1, QuantityArray2, QuantityScalar};
 use std::iter::FromIterator;
-use std::ops::{Add, Index, Sub};
+use std::ops::{Add, Deref, Sub};
 use std::rc::Rc;
 
 #[derive(Clone, Copy)]
@@ -754,19 +754,15 @@ impl<'a, U, E> IntoIterator for StateVec<'a, U, E> {
     }
 }
 
-impl<'a, U, E> Index<usize> for StateVec<'a, U, E> {
-    type Output = &'a State<U, E>;
+impl<'a, U, E> Deref for StateVec<'a, U, E> {
+    type Target = Vec<&'a State<U, E>>;
 
-    fn index(&self, i: usize) -> &Self::Output {
-        &self.0[i]
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
 impl<'a, U: EosUnit, E: EquationOfState> StateVec<'a, U, E> {
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
-
     pub fn temperature(&self) -> QuantityArray1<U> {
         QuantityArray1::from_shape_fn(self.0.len(), |i| self.0[i].temperature)
     }
