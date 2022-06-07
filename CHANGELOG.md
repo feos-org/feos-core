@@ -7,9 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Added `pure_records` getter in the `impl_parameter` macro. [#54](https://github.com/feos-org/feos-core/pull/54)
+- Implemented `Deref` and `IntoIterator` for `StateVec` for additional vector functionalities of the `StateVec`. [#55](https://github.com/feos-org/feos-core/pull/55) 
+- Added `StateVec.__len__` and `StateVec.__getitem__` to allow indexing and iterating over `StateVec`s in Python. [#55](https://github.com/feos-org/feos-core/pull/55)
+- Added `SegmentCount` trait that allows the construction of parameter sets from arbitrary chemical records. [#56](https://github.com/feos-org/feos-core/pull/56)
+- Added `ParameterHetero` trait to generically provide utility functions for parameter sets of heterosegmented Helmholtz energy models. [#56](https://github.com/feos-org/feos-core/pull/56)
 
 ### Changed
 - Changed datatype for binary parameters in interfaces of the `from_records` and `new_binary` methods for parameters to take either numpy arrays of `f64` or a list of `BinaryRecord` as input. [#54](https://github.com/feos-org/feos-core/pull/54)
+- Modified `PhaseDiagram.to_dict` function in Python to account for pure components and mixtures. [#55](https://github.com/feos-org/feos-core/pull/55)
+- Changed `StateVec` to a tuple struct. [#55](https://github.com/feos-org/feos-core/pull/55)
+- Made `cas` field of `Identifier` optional. [#56](https://github.com/feos-org/feos-core/pull/56)
+- Added type parameter to `FromSegments` and made its `from_segments` function fallible for more control over model limitations. [#56](https://github.com/feos-org/feos-core/pull/56)
+- Reverted `ChemicalRecord` back to a struct that only contains the structural information (and not segment and bond counts). [#56](https://github.com/feos-org/feos-core/pull/56)
 
 ## [0.2.0] - 2022-04-12
 ### Added
