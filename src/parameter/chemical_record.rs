@@ -4,7 +4,10 @@ use super::ParameterError;
 use conv::ValueInto;
 use num_traits::NumAssign;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::{
+    borrow::Cow,
+    collections::{HashMap, HashSet},
+};
 
 // Auxiliary structure used to deserialize chemical records without explicit bond information.
 #[derive(Serialize, Deserialize)]
@@ -105,13 +108,13 @@ impl std::fmt::Display for ChemicalRecord {
 pub trait SegmentCount {
     type Count: Copy + ValueInto<f64>;
 
-    fn identifier(&self) -> &Identifier;
+    fn identifier(&self) -> Cow<Identifier>;
 
     /// Count the number of occurences of each individual segment identifier in the
     /// molecule.
     ///
     /// The map contains the segment identifier as key and the count as value.
-    fn segment_count(&self) -> HashMap<String, Self::Count>;
+    fn segment_count(&self) -> Cow<HashMap<String, Self::Count>>;
 
     /// Count the number of occurences of each individual segment in the
     /// molecule.
@@ -134,8 +137,8 @@ pub trait SegmentCount {
             return Err(ParameterError::ComponentsNotFound(msg));
         };
         Ok(count
-            .into_iter()
-            .map(|(s, c)| (segments.remove(&s).unwrap(), c))
+            .iter()
+            .map(|(s, c)| (segments.remove(s).unwrap(), *c))
             .collect())
     }
 }
@@ -143,11 +146,11 @@ pub trait SegmentCount {
 impl SegmentCount for ChemicalRecord {
     type Count = usize;
 
-    fn identifier(&self) -> &Identifier {
-        &self.identifier
+    fn identifier(&self) -> Cow<Identifier> {
+        Cow::Borrowed(&self.identifier)
     }
 
-    fn segment_count(&self) -> HashMap<String, usize> {
-        self.segment_count()
+    fn segment_count(&self) -> Cow<HashMap<String, usize>> {
+        Cow::Owned(self.segment_count())
     }
 }

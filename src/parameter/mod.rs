@@ -203,7 +203,7 @@ where
             .iter()
             .map(|cr| {
                 cr.segment_map(&segment_records).and_then(|segments| {
-                    PureRecord::from_segments(cr.identifier().clone(), segments)
+                    PureRecord::from_segments(cr.identifier().into_owned(), segments)
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
