@@ -36,7 +36,9 @@ impl TryFrom<&str> for IdentifierOption {
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Identifier {
     /// CAS number
-    pub cas: String,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cas: Option<String>,
     /// Commonly used english name
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -67,7 +69,7 @@ impl Identifier {
     /// ```no_run
     /// # use feos_core::parameter::Identifier;
     /// let methanol = Identifier::new(
-    ///     "67-56-1",
+    ///     Some("67-56-1"),
     ///     Some("methanol"),
     ///     Some("methanol"),
     ///     Some("CO"),
@@ -75,7 +77,7 @@ impl Identifier {
     ///     Some("CH4O")
     /// );
     pub fn new(
-        cas: &str,
+        cas: Option<&str>,
         name: Option<&str>,
         iupac_name: Option<&str>,
         smiles: Option<&str>,
@@ -83,7 +85,7 @@ impl Identifier {
         formula: Option<&str>,
     ) -> Identifier {
         Identifier {
-            cas: cas.to_owned(),
+            cas: cas.map(Into::into),
             name: name.map(Into::into),
             iupac_name: iupac_name.map(Into::into),
             smiles: smiles.map(Into::into),
@@ -94,7 +96,7 @@ impl Identifier {
 
     pub fn as_string(&self, option: IdentifierOption) -> Option<String> {
         match option {
-            IdentifierOption::Cas => Some(self.cas.clone()),
+            IdentifierOption::Cas => self.cas.clone(),
             IdentifierOption::Name => self.name.clone(),
             IdentifierOption::IupacName => self.iupac_name.clone(),
             IdentifierOption::Smiles => self.smiles.clone(),
@@ -106,21 +108,24 @@ impl Identifier {
 
 impl std::fmt::Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Identifier(cas={}", self.cas)?;
+        write!(f, "Identifier(")?;
+        if let Some(n) = &self.cas {
+            write!(f, "cas={}, ", n)?;
+        }
         if let Some(n) = &self.name {
-            write!(f, ", name={}", n)?;
+            write!(f, "name={}, ", n)?;
         }
         if let Some(n) = &self.iupac_name {
-            write!(f, ", iupac_name={}", n)?;
+            write!(f, "iupac_name={}, ", n)?;
         }
         if let Some(n) = &self.smiles {
-            write!(f, ", smiles={}", n)?;
+            write!(f, "smiles={}, ", n)?;
         }
         if let Some(n) = &self.inchi {
-            write!(f, ", inchi={}", n)?;
+            write!(f, "inchi={}, ", n)?;
         }
         if let Some(n) = &self.formula {
-            write!(f, ", formula={}", n)?;
+            write!(f, "formula={}", n)?;
         }
         write!(f, ")")
     }
