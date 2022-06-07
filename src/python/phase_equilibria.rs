@@ -529,8 +529,8 @@ macro_rules! impl_phase_equilibrium {
 
             /// Returns the phase diagram as dictionary.
             ///
-            /// Note
-            /// ----
+            /// Units
+            /// -----
             /// temperature : K
             /// pressure : Pa
             /// densities : mol / m³
@@ -541,17 +541,32 @@ macro_rules! impl_phase_equilibrium {
             /// -------
             /// dict[str, list[float]]
             ///     Keys: property names. Values: property for each state.
+            /// 
+            /// Notes
+            /// -----
+            /// xi: liquid molefraction of component i
+            /// yi: vapor molefraction of component i
+            /// i: component index according to order in parameters.
             pub fn to_dict(&self) -> PyResult<HashMap<String, Vec<f64>>> {
-                let mut result = HashMap::with_capacity(8);
-                result.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value()?.into_raw_vec());
-                result.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value()?.into_raw_vec());
-                result.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
-                result.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
-                result.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy() / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
-                result.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy() / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
-                result.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy() / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
-                result.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy() / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
-                Ok(result)
+                let n = self.0.states[0].liquid().eos.components();
+                let mut dict = HashMap::with_capacity(8 + 2 * n);
+                if n != 1 {
+                    let xs = self.0.liquid().molefracs();
+                    let ys = self.0.vapor().molefracs();
+                    for i in 0..n {
+                        dict.insert(String::from(format!("x{}", i)), xs.column(i).to_vec());
+                        dict.insert(String::from(format!("y{}", i)), ys.column(i).to_vec());
+                    }
+                }
+                dict.insert(String::from("temperature"), (self.0.vapor().temperature() / KELVIN).into_value()?.into_raw_vec());
+                dict.insert(String::from("pressure"), (self.0.vapor().pressure() / PASCAL).into_value()?.into_raw_vec());
+                dict.insert(String::from("density liquid"), (self.0.liquid().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
+                dict.insert(String::from("density vapor"), (self.0.vapor().density() / (MOL / METER.powi(3))).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar enthalpy liquid"), (self.0.liquid().molar_enthalpy() / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar enthalpy vapor"), (self.0.vapor().molar_enthalpy() / (KILO*JOULE / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar entropy liquid"), (self.0.liquid().molar_entropy() / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
+                dict.insert(String::from("molar entropy vapor"), (self.0.vapor().molar_entropy() / (KILO*JOULE / KELVIN / MOL)).into_value()?.into_raw_vec());
+                Ok(dict)
             }
 
             /// Binary phase diagram calculated using bubble/dew point iterations.

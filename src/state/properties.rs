@@ -6,7 +6,7 @@ use ndarray::{arr1, Array1, Array2};
 use num_dual::DualNum;
 use quantity::{QuantityArray, QuantityArray1, QuantityArray2, QuantityScalar};
 use std::iter::FromIterator;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Deref, Sub};
 use std::rc::Rc;
 
 #[derive(Clone, Copy)]
@@ -737,80 +737,89 @@ impl<U: EosUnit, E: EquationOfState + EntropyScaling<U>> State<U, E> {
 
 /// A list of states for a simple access to properties
 /// of multiple states.
-pub struct StateVec<'a, U, E> {
-    pub states: Vec<&'a State<U, E>>,
-}
+pub struct StateVec<'a, U, E>(pub Vec<&'a State<U, E>>);
 
 impl<'a, U, E> FromIterator<&'a State<U, E>> for StateVec<'a, U, E> {
     fn from_iter<I: IntoIterator<Item = &'a State<U, E>>>(iter: I) -> Self {
-        Self {
-            states: iter.into_iter().collect(),
-        }
+        Self(iter.into_iter().collect())
+    }
+}
+
+impl<'a, U, E> IntoIterator for StateVec<'a, U, E> {
+    type Item = &'a State<U, E>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a, U, E> Deref for StateVec<'a, U, E> {
+    type Target = Vec<&'a State<U, E>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
 impl<'a, U: EosUnit, E: EquationOfState> StateVec<'a, U, E> {
     pub fn temperature(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].temperature)
+        QuantityArray1::from_shape_fn(self.0.len(), |i| self.0[i].temperature)
     }
 
     pub fn pressure(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].pressure(Contributions::Total)
-        })
+        QuantityArray1::from_shape_fn(self.0.len(), |i| self.0[i].pressure(Contributions::Total))
     }
 
     pub fn compressibility(&self) -> Array1<f64> {
-        Array1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].compressibility(Contributions::Total)
+        Array1::from_shape_fn(self.0.len(), |i| {
+            self.0[i].compressibility(Contributions::Total)
         })
     }
 
     pub fn density(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].density)
+        QuantityArray1::from_shape_fn(self.0.len(), |i| self.0[i].density)
     }
 
     pub fn molefracs(&self) -> Array2<f64> {
-        Array2::from_shape_fn(
-            (self.states.len(), self.states[0].eos.components()),
-            |(i, j)| self.states[i].molefracs[j],
-        )
+        Array2::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
+            self.0[i].molefracs[j]
+        })
     }
 
     pub fn molar_enthalpy(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].molar_enthalpy(Contributions::Total)
+        QuantityArray1::from_shape_fn(self.0.len(), |i| {
+            self.0[i].molar_enthalpy(Contributions::Total)
         })
     }
 
     pub fn molar_entropy(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].molar_entropy(Contributions::Total)
+        QuantityArray1::from_shape_fn(self.0.len(), |i| {
+            self.0[i].molar_entropy(Contributions::Total)
         })
     }
 }
 
 impl<'a, U: EosUnit, E: EquationOfState + MolarWeight<U>> StateVec<'a, U, E> {
     pub fn mass_density(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| self.states[i].mass_density())
+        QuantityArray1::from_shape_fn(self.0.len(), |i| self.0[i].mass_density())
     }
 
     pub fn massfracs(&self) -> Array2<f64> {
-        Array2::from_shape_fn(
-            (self.states.len(), self.states[0].eos.components()),
-            |(i, j)| self.states[i].massfracs()[j],
-        )
+        Array2::from_shape_fn((self.0.len(), self.0[0].eos.components()), |(i, j)| {
+            self.0[i].massfracs()[j]
+        })
     }
 
     pub fn specific_enthalpy(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].specific_enthalpy(Contributions::Total)
+        QuantityArray1::from_shape_fn(self.0.len(), |i| {
+            self.0[i].specific_enthalpy(Contributions::Total)
         })
     }
 
     pub fn specific_entropy(&self) -> QuantityArray1<U> {
-        QuantityArray1::from_shape_fn(self.states.len(), |i| {
-            self.states[i].specific_entropy(Contributions::Total)
+        QuantityArray1::from_shape_fn(self.0.len(), |i| {
+            self.0[i].specific_entropy(Contributions::Total)
         })
     }
 }
