@@ -36,7 +36,9 @@ impl TryFrom<&str> for IdentifierOption {
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Identifier {
     /// CAS number
-    pub cas: String,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cas: Option<String>,
     /// Commonly used english name
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -67,7 +69,7 @@ impl Identifier {
     /// ```no_run
     /// # use feos_core::parameter::Identifier;
     /// let methanol = Identifier::new(
-    ///     "67-56-1",
+    ///     Some("67-56-1"),
     ///     Some("methanol"),
     ///     Some("methanol"),
     ///     Some("CO"),
@@ -75,7 +77,7 @@ impl Identifier {
     ///     Some("CH4O")
     /// );
     pub fn new(
-        cas: &str,
+        cas: Option<&str>,
         name: Option<&str>,
         iupac_name: Option<&str>,
         smiles: Option<&str>,
@@ -83,7 +85,7 @@ impl Identifier {
         formula: Option<&str>,
     ) -> Identifier {
         Identifier {
-            cas: cas.to_owned(),
+            cas: cas.map(Into::into),
             name: name.map(Into::into),
             iupac_name: iupac_name.map(Into::into),
             smiles: smiles.map(Into::into),
@@ -94,7 +96,7 @@ impl Identifier {
 
     pub fn as_string(&self, option: IdentifierOption) -> Option<String> {
         match option {
-            IdentifierOption::Cas => Some(self.cas.clone()),
+            IdentifierOption::Cas => self.cas.clone(),
             IdentifierOption::Name => self.name.clone(),
             IdentifierOption::IupacName => self.iupac_name.clone(),
             IdentifierOption::Smiles => self.smiles.clone(),
@@ -106,23 +108,26 @@ impl Identifier {
 
 impl std::fmt::Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Identifier(cas={}", self.cas)?;
+        let mut ids = Vec::new();
+        if let Some(n) = &self.cas {
+            ids.push(format!("cas={}", n));
+        }
         if let Some(n) = &self.name {
-            write!(f, ", name={}", n)?;
+            ids.push(format!("name={}", n));
         }
         if let Some(n) = &self.iupac_name {
-            write!(f, ", iupac_name={}", n)?;
+            ids.push(format!("iupac_name={}", n));
         }
         if let Some(n) = &self.smiles {
-            write!(f, ", smiles={}", n)?;
+            ids.push(format!("smiles={}", n));
         }
         if let Some(n) = &self.inchi {
-            write!(f, ", inchi={}", n)?;
+            ids.push(format!("inchi={}", n));
         }
         if let Some(n) = &self.formula {
-            write!(f, ", formula={}", n)?;
+            ids.push(format!("formula={}", n));
         }
-        write!(f, ")")
+        write!(f, "Identifier({})", ids.join(", "))
     }
 }
 
@@ -136,5 +141,16 @@ impl Eq for Identifier {}
 impl Hash for Identifier {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.cas.hash(state);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_fmt() {
+        let id = Identifier::new(None, Some("acetone"), None, Some("CC(=O)C"), None, None);
+        assert_eq!(id.to_string(), "Identifier(name=acetone, smiles=CC(=O)C)");
     }
 }

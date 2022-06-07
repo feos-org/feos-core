@@ -1,9 +1,7 @@
 use crate::impl_json_handling;
 use crate::parameter::{BinaryRecord, ChemicalRecord, Identifier, ParameterError};
-use either::Either;
-use pyo3::exceptions::{PyRuntimeError, PyValueError};
+use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
-use std::collections::HashMap;
 
 impl From<ParameterError> for PyErr {
     fn from(e: ParameterError) -> PyErr {
@@ -15,7 +13,7 @@ impl From<ParameterError> for PyErr {
 ///
 /// Parameters
 /// ----------
-/// cas : str
+/// cas : str, optional
 ///     CAS number.
 /// name : str, optional
 ///     name
@@ -33,14 +31,16 @@ impl From<ParameterError> for PyErr {
 /// Identifier
 #[pyclass(name = "Identifier")]
 #[derive(Clone)]
-#[pyo3(text_signature = "(cas, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)")]
+#[pyo3(
+    text_signature = "(cas=None, name=None, iupac_name=None, smiles=None, inchi=None, formula=None)"
+)]
 pub struct PyIdentifier(pub Identifier);
 
 #[pymethods]
 impl PyIdentifier {
     #[new]
     fn new(
-        cas: &str,
+        cas: Option<&str>,
         name: Option<&str>,
         iupac_name: Option<&str>,
         smiles: Option<&str>,
@@ -53,13 +53,13 @@ impl PyIdentifier {
     }
 
     #[getter]
-    fn get_cas(&self) -> String {
+    fn get_cas(&self) -> Option<String> {
         self.0.cas.clone()
     }
 
     #[setter]
     fn set_cas(&mut self, cas: &str) {
-        self.0.cas = cas.to_string();
+        self.0.cas = Some(cas.to_string());
     }
 
     #[getter]
@@ -144,63 +144,27 @@ pub struct PyChemicalRecord(pub ChemicalRecord);
 #[pymethods]
 impl PyChemicalRecord {
     #[new]
-    fn new(identifier: PyIdentifier, segments: &PyAny, bonds: Option<&PyAny>) -> PyResult<Self> {
-        if let Ok(segments) = segments.extract::<Vec<String>>() {
-            let bonds = bonds
-                .map(|bonds| bonds.extract::<Vec<[usize; 2]>>())
-                .transpose()?;
-            Ok(Self(ChemicalRecord::new(identifier.0, segments, bonds)))
-        } else if let Ok(segments) = segments.extract::<HashMap<String, f64>>() {
-            let bonds = bonds
-                .map(|bonds| bonds.extract::<HashMap<[String; 2], f64>>())
-                .transpose()?;
-            Ok(Self(ChemicalRecord::new_count(
-                identifier.0,
-                segments,
-                bonds,
-            )))
-        } else {
-            Err(PyValueError::new_err(
-                "`segments` must either be a list or a dict of strings.",
-            ))
-        }
+    fn new(
+        identifier: PyIdentifier,
+        segments: Vec<String>,
+        bonds: Option<Vec<[usize; 2]>>,
+    ) -> Self {
+        Self(ChemicalRecord::new(identifier.0, segments, bonds))
     }
 
     #[getter]
     fn get_identifier(&self) -> PyIdentifier {
-        PyIdentifier(self.0.identifier().clone())
+        PyIdentifier(self.0.identifier.clone())
     }
 
     #[getter]
-    fn get_segments(&self, py: Python) -> PyObject {
-        match &self.0.segments() {
-            Either::Left(segments) => segments.to_object(py),
-            Either::Right(segments) => segments.to_object(py),
-        }
+    fn get_segments(&self) -> Vec<String> {
+        self.0.segments.clone()
     }
 
     #[getter]
-    fn get_bonds(&self, py: Python) -> PyObject {
-        match &self.0 {
-            ChemicalRecord::List {
-                identifier: _,
-                segments: _,
-                bonds,
-            } => bonds
-                .iter()
-                .map(|[a, b]| (a, b))
-                .collect::<Vec<_>>()
-                .to_object(py),
-            ChemicalRecord::Count {
-                identifier: _,
-                segments: _,
-                bonds,
-            } => bonds
-                .iter()
-                .map(|([a, b], c)| ((a, b), c))
-                .collect::<HashMap<_, _>>()
-                .to_object(py),
-        }
+    fn get_bonds(&self) -> Vec<[usize; 2]> {
+        self.0.bonds.clone()
     }
 
     fn __repr__(&self) -> PyResult<String> {
@@ -275,7 +239,7 @@ macro_rules! impl_binary_record {
 
             #[getter]
             fn get_model_record(&self, py: Python) -> PyObject {
-                if let Ok(mr) = f64::try_from(self.0.model_record) {
+                if let Ok(mr) = f64::try_from(self.0.model_record.clone()) {
                     mr.to_object(py)
                 } else {
                     $py_model_record(self.0.model_record.clone()).into_py(py)
@@ -742,7 +706,7 @@ macro_rules! impl_parameter_from_segments {
             /// Parameters
             /// ----------
             /// chemical_records : [ChemicalRecord]
-            ///     A list of pure component parameters.
+            ///     A list of pure component chemical records.
             /// segment_records : [SegmentRecord]
             ///     A list of records containing the parameters of
             ///     all individual segments.

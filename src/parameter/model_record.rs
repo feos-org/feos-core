@@ -1,5 +1,7 @@
 use super::identifier::Identifier;
 use super::segment::SegmentRecord;
+use super::ParameterError;
+use conv::ValueInto;
 use serde::{Deserialize, Serialize};
 
 /// A collection of parameters of a pure substance.
@@ -8,7 +10,7 @@ pub struct PureRecord<M, I> {
     pub identifier: Identifier,
     pub molarweight: f64,
     pub model_record: M,
-    #[serde(default)]
+    #[serde(default = "Default::default")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ideal_gas_record: Option<I>,
 }
@@ -33,26 +35,35 @@ impl<M, I> PureRecord<M, I> {
     ///
     /// The [FromSegments] trait needs to be implemented for both the model record
     /// and the ideal gas record.
-    pub fn from_segments<S>(identifier: Identifier, segments: S) -> Self
+    pub fn from_segments<S, T>(identifier: Identifier, segments: S) -> Result<Self, ParameterError>
     where
-        M: FromSegments,
-        I: FromSegments,
-        S: IntoIterator<Item = (SegmentRecord<M, I>, f64)>,
+        T: Copy + ValueInto<f64>,
+        M: FromSegments<T>,
+        I: FromSegments<T>,
+        S: IntoIterator<Item = (SegmentRecord<M, I>, T)>,
     {
         let mut molarweight = 0.0;
         let mut model_segments = Vec::new();
         let mut ideal_gas_segments = Vec::new();
         for (s, n) in segments {
-            molarweight += s.molarweight * n;
+            molarweight += s.molarweight * n.value_into().unwrap();
             model_segments.push((s.model_record, n));
             ideal_gas_segments.push(s.ideal_gas_record.map(|ig| (ig, n)));
         }
-        let model_record = M::from_segments(&model_segments);
+        let model_record = M::from_segments(&model_segments)?;
 
         let ideal_gas_segments: Option<Vec<_>> = ideal_gas_segments.into_iter().collect();
-        let ideal_gas_record = ideal_gas_segments.as_deref().map(I::from_segments);
+        let ideal_gas_record = ideal_gas_segments
+            .as_deref()
+            .map(I::from_segments)
+            .transpose()?;
 
-        Self::new(identifier, molarweight, model_record, ideal_gas_record)
+        Ok(Self::new(
+            identifier,
+            molarweight,
+            model_record,
+            ideal_gas_record,
+        ))
     }
 }
 
@@ -75,18 +86,18 @@ where
 
 /// Trait for models that implement a homosegmented group contribution
 /// method
-pub trait FromSegments: Clone {
+pub trait FromSegments<T>: Clone {
     /// Constructs the record from a list of segment records with their
-    /// number of occurences and possibly binary interaction parameters.
-    fn from_segments(segments: &[(Self, f64)]) -> Self;
+    /// number of occurences.
+    fn from_segments(segments: &[(Self, T)]) -> Result<Self, ParameterError>;
 }
 
 /// Trait for models that implement a homosegmented group contribution
 /// method and have a combining rule for binary interaction parameters.
-pub trait FromSegmentsBinary: Clone {
-    /// Constructs the record from a list of segment records with their
-    /// number of occurences and possibly binary interaction parameters.
-    fn from_segments_binary(segments: &[(Self, f64, f64)]) -> Self;
+pub trait FromSegmentsBinary<T>: Clone {
+    /// Constructs the binary record from a list of segment records with
+    /// their number of occurences.
+    fn from_segments_binary(segments: &[(Self, T, T)]) -> Result<Self, ParameterError>;
 }
 
 /// A collection of parameters that model interactions between two
@@ -151,7 +162,7 @@ mod test {
         "#;
         let record: PureRecord<TestModelRecordSegments, JobackRecord> =
             serde_json::from_str(r).expect("Unable to parse json.");
-        assert_eq!(record.identifier.cas, "123-4-5")
+        assert_eq!(record.identifier.cas, Some("123-4-5".into()))
     }
 
     #[test]
@@ -179,7 +190,7 @@ mod test {
         ]"#;
         let records: Vec<PureRecord<TestModelRecordSegments, JobackRecord>> =
             serde_json::from_str(r).expect("Unable to parse json.");
-        assert_eq!(records[0].identifier.cas, "1");
-        assert_eq!(records[1].identifier.cas, "2")
+        assert_eq!(records[0].identifier.cas, Some("1".into()));
+        assert_eq!(records[1].identifier.cas, Some("2".into()))
     }
 }

@@ -101,7 +101,7 @@ impl PengRobinsonParameters {
                     pc: pc[i],
                     acentric_factor: acentric_factor[i],
                 };
-                let id = Identifier::new("1", None, None, None, None, None);
+                let id = Identifier::default();
                 PureRecord::new(id, molarweight[i], record, None)
             })
             .collect();

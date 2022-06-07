@@ -6,6 +6,7 @@ use crate::{
     EosResult, EosUnit, EquationOfState, HelmholtzEnergy, IdealGasContribution,
     IdealGasContributionDual,
 };
+use conv::ValueInto;
 use ndarray::Array1;
 use num_dual::*;
 use quantity::QuantityScalar;
@@ -45,21 +46,22 @@ impl fmt::Display for JobackRecord {
 
 /// Implementation of the combining rules as described in
 /// [Joback and Reid, 1987](https://doi.org/10.1080/00986448708960487).
-impl FromSegments for JobackRecord {
-    fn from_segments(segments: &[(Self, f64)]) -> Self {
+impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
+    fn from_segments(segments: &[(Self, T)]) -> Result<Self, ParameterError> {
         let mut a = -37.93;
         let mut b = 0.21;
         let mut c = -3.91e-4;
         let mut d = 2.06e-7;
         let mut e = 0.0;
         segments.iter().for_each(|(s, n)| {
-            a += s.a * *n;
-            b += s.b * *n;
-            c += s.c * *n;
-            d += s.d * *n;
-            e += s.e * *n;
+            let n = (*n).value_into().unwrap();
+            a += s.a * n;
+            b += s.b * n;
+            c += s.c * n;
+            d += s.d * n;
+            e += s.e * n;
         });
-        Self { a, b, c, d, e }
+        Ok(Self { a, b, c, d, e })
     }
 }
 
@@ -167,7 +169,7 @@ mod tests {
 
     use super::*;
 
-    #[derive(Deserialize, Clone)]
+    #[derive(Deserialize, Clone, Debug)]
     struct ModelRecord;
 
     #[test]
@@ -213,7 +215,7 @@ mod tests {
         let segment_records: Vec<SegmentRecord<ModelRecord, JobackRecord>> =
             serde_json::from_str(segments_json).expect("Unable to parse json.");
         let segments = ChemicalRecord::new(
-            Identifier::new("", None, None, None, None, None),
+            Identifier::default(),
             vec![
                 String::from("-Cl"),
                 String::from("-Cl"),
@@ -226,15 +228,15 @@ mod tests {
             ],
             None,
         )
-        .segment_count(&segment_records)?;
-        assert_eq!(segments.get(&segment_records[0]), Some(&2.0));
-        assert_eq!(segments.get(&segment_records[1]), Some(&4.0));
-        assert_eq!(segments.get(&segment_records[2]), Some(&2.0));
+        .segment_map(&segment_records)?;
+        assert_eq!(segments.get(&segment_records[0]), Some(&2));
+        assert_eq!(segments.get(&segment_records[1]), Some(&4));
+        assert_eq!(segments.get(&segment_records[2]), Some(&2));
         let joback_segments: Vec<_> = segments
             .iter()
             .map(|(s, &n)| (s.ideal_gas_record.clone().unwrap(), n))
             .collect();
-        let jr = JobackRecord::from_segments(&joback_segments);
+        let jr = JobackRecord::from_segments(&joback_segments)?;
         assert_relative_eq!(
             jr.a,
             33.3 * 2.0 - 2.14 * 4.0 - 8.25 * 2.0 - 37.93,
