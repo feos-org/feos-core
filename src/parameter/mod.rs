@@ -318,6 +318,7 @@ where
         Self::from_segments(chemical_records, segment_records, binary_records)
     }
 
+    /// Return a parameter set containing the subset of components specified in `component_list`.
     fn subset(&self, component_list: &[usize]) -> Self {
         let (pure_records, binary_records) = self.records();
         let pure_records = component_list
@@ -333,12 +334,14 @@ where
     }
 }
 
+/// Constructor methods for parameters for heterosegmented models.
 pub trait ParameterHetero: Sized {
     type Chemical: Clone;
     type Pure: Clone + DeserializeOwned;
     type IdealGas: Clone + DeserializeOwned;
     type Binary: Clone + DeserializeOwned;
 
+    /// Creates parameters from the molecular structure and segment information.
     fn from_segments<C: Clone + Into<Self::Chemical>>(
         chemical_records: Vec<C>,
         segment_records: Vec<SegmentRecord<Self::Pure, Self::IdealGas>>,
@@ -355,6 +358,7 @@ pub trait ParameterHetero: Sized {
         &Option<Vec<BinaryRecord<String, Self::Binary>>>,
     );
 
+    /// Creates parameters from segment information stored in json files.
     fn from_json_segments<P>(
         substances: &[&str],
         file_pure: P,
@@ -418,6 +422,7 @@ pub trait ParameterHetero: Sized {
         Self::from_segments(chemical_records, segment_records, binary_records)
     }
 
+    /// Return a parameter set containing the subset of components specified in `component_list`.
     fn subset(&self, component_list: &[usize]) -> Self {
         let (chemical_records, segment_records, binary_segment_records) = self.records();
         let chemical_records: Vec<_> = component_list
