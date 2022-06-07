@@ -54,11 +54,12 @@ impl<T: Copy + ValueInto<f64>> FromSegments<T> for JobackRecord {
         let mut d = 2.06e-7;
         let mut e = 0.0;
         segments.iter().for_each(|(s, n)| {
-            a += s.a * (*n).value_into().unwrap();
-            b += s.b * (*n).value_into().unwrap();
-            c += s.c * (*n).value_into().unwrap();
-            d += s.d * (*n).value_into().unwrap();
-            e += s.e * (*n).value_into().unwrap();
+            let n = (*n).value_into().unwrap();
+            a += s.a * n;
+            b += s.b * n;
+            c += s.c * n;
+            d += s.d * n;
+            e += s.e * n;
         });
         Ok(Self { a, b, c, d, e })
     }

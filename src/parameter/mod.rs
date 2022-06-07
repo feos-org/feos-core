@@ -202,8 +202,7 @@ where
         let pure_records = chemical_records
             .iter()
             .map(|cr| {
-                let segments = cr.segment_map(&segment_records);
-                segments.and_then(|segments| {
+                cr.segment_map(&segment_records).and_then(|segments| {
                     PureRecord::from_segments(cr.identifier().clone(), segments)
                 })
             })
@@ -227,20 +226,23 @@ where
         // If a specific segment-segment interaction is not in the binary map,
         // the default value is used.
         let n = pure_records.len();
-        let binary_records = Array2::from_shape_fn([n, n], |(i, j)| {
-            let mut vec = Vec::new();
-            for (id1, &n1) in segment_counts[i].iter() {
-                for (id2, &n2) in segment_counts[j].iter() {
-                    let binary = binary_map
-                        .get(&(id1.clone(), id2.clone()))
-                        .or_else(|| binary_map.get(&(id2.clone(), id1.clone())))
-                        .cloned()
-                        .unwrap_or_default();
-                    vec.push((binary, n1, n2));
+        let mut binary_records = Array2::default([n, n]);
+        for i in 0..n {
+            for j in 0..n {
+                let mut vec = Vec::new();
+                for (id1, &n1) in segment_counts[i].iter() {
+                    for (id2, &n2) in segment_counts[j].iter() {
+                        let binary = binary_map
+                            .get(&(id1.clone(), id2.clone()))
+                            .or_else(|| binary_map.get(&(id2.clone(), id1.clone())))
+                            .cloned()
+                            .unwrap_or_default();
+                        vec.push((binary, n1, n2));
+                    }
                 }
+                binary_records[(i, j)] = Self::Binary::from_segments_binary(&vec)?
             }
-            Self::Binary::from_segments_binary(&vec).unwrap()
-        });
+        }
 
         Ok(Self::from_records(pure_records, binary_records))
     }

@@ -108,26 +108,26 @@ impl Identifier {
 
 impl std::fmt::Display for Identifier {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Identifier(")?;
+        let mut ids = Vec::new();
         if let Some(n) = &self.cas {
-            write!(f, "cas={}, ", n)?;
+            ids.push(format!("cas={}", n));
         }
         if let Some(n) = &self.name {
-            write!(f, "name={}, ", n)?;
+            ids.push(format!("name={}", n));
         }
         if let Some(n) = &self.iupac_name {
-            write!(f, "iupac_name={}, ", n)?;
+            ids.push(format!("iupac_name={}", n));
         }
         if let Some(n) = &self.smiles {
-            write!(f, "smiles={}, ", n)?;
+            ids.push(format!("smiles={}", n));
         }
         if let Some(n) = &self.inchi {
-            write!(f, "inchi={}, ", n)?;
+            ids.push(format!("inchi={}", n));
         }
         if let Some(n) = &self.formula {
-            write!(f, "formula={}", n)?;
+            ids.push(format!("formula={}", n));
         }
-        write!(f, ")")
+        write!(f, "Identifier({})", ids.join(", "))
     }
 }
 
@@ -141,5 +141,16 @@ impl Eq for Identifier {}
 impl Hash for Identifier {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.cas.hash(state);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_fmt() {
+        let id = Identifier::new(None, Some("acetone"), None, Some("CC(=O)C"), None, None);
+        assert_eq!(id.to_string(), "Identifier(name=acetone, smiles=CC(=O)C)");
     }
 }

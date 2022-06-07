@@ -6,7 +6,7 @@ use num_traits::NumAssign;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
-// Auxiliary structure used to deserialize chemical records without bond information.
+// Auxiliary structure used to deserialize chemical records without explicit bond information.
 #[derive(Serialize, Deserialize)]
 struct ChemicalRecordJSON {
     identifier: Identifier,
@@ -104,16 +104,17 @@ impl std::fmt::Display for ChemicalRecord {
 /// Trait that enables parameter generation from generic molecular representations.
 pub trait SegmentCount {
     type Count: Copy + ValueInto<f64>;
+
     fn identifier(&self) -> &Identifier;
 
     /// Count the number of occurences of each individual segment identifier in the
-    /// chemical record.
+    /// molecule.
     ///
     /// The map contains the segment identifier as key and the count as value.
     fn segment_count(&self) -> HashMap<String, Self::Count>;
 
     /// Count the number of occurences of each individual segment in the
-    /// chemical record.
+    /// molecule.
     ///
     /// The map contains the segment record as key and the count as value.
     fn segment_map<M: Clone, I: Clone>(
