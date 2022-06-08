@@ -4,8 +4,8 @@ use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 
 /// Possible variants to identify a substance.
-#[repr(C)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum IdentifierOption {
     Cas,
     Name,

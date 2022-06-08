@@ -1,6 +1,7 @@
 use feos_core::python::joback::PyJobackRecord;
 use feos_core::python::parameter::*;
 use feos_core::{Contributions, Verbosity};
+use feos_core::parameter::IdentifierOption;
 use pyo3::prelude::*;
 use pyo3::wrap_pymodule;
 use quantity::python::__PYO3_PYMODULE_DEF_QUANTITY;
@@ -17,6 +18,7 @@ pub fn feos_core(py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<Contributions>()?;
     m.add_class::<PyChemicalRecord>()?;
     m.add_class::<PyJobackRecord>()?;
+    m.add_class::<IdentifierOption>()?;
 
     m.add_wrapped(wrap_pymodule!(user_defined))?;
     m.add_wrapped(wrap_pymodule!(cubic))?;
