@@ -1,6 +1,4 @@
-use super::ParameterError;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 
 /// Possible variants to identify a substance.
@@ -13,23 +11,6 @@ pub enum IdentifierOption {
     Smiles,
     Inchi,
     Formula,
-}
-
-impl TryFrom<&str> for IdentifierOption {
-    type Error = ParameterError;
-
-    fn try_from(s: &str) -> Result<Self, Self::Error> {
-        let lower = s.to_lowercase();
-        match lower.as_str() {
-            "cas" => Ok(Self::Cas),
-            "name" => Ok(Self::Name),
-            "iupacname" => Ok(Self::IupacName),
-            "smiles" => Ok(Self::Smiles),
-            "inchi" => Ok(Self::Inchi),
-            "formula" => Ok(Self::Formula),
-            _ => Err(ParameterError::IdentifierNotFound(s.to_owned())),
-        }
-    }
 }
 
 /// A collection of identifiers for a chemical structure or substance.
