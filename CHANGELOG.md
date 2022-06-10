@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Made `cas` field of `Identifier` optional. [#56](https://github.com/feos-org/feos-core/pull/56)
 - Added type parameter to `FromSegments` and made its `from_segments` function fallible for more control over model limitations. [#56](https://github.com/feos-org/feos-core/pull/56)
 - Reverted `ChemicalRecord` back to a struct that only contains the structural information (and not segment and bond counts). [#56](https://github.com/feos-org/feos-core/pull/56)
+- Made `IdentifierOption` directly usable in Python using `PyO3`'s new `#[pyclass]` for fieldless enums feature. [#58](https://github.com/feos-org/feos-core/pull/58)
 
 ## [0.2.0] - 2022-04-12
 ### Added

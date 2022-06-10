@@ -545,27 +545,25 @@ macro_rules! impl_parameter {
             /// binary_records : numpy.ndarray[float] or List[BinaryRecord]
             ///     A matrix of binary interaction parameters or a list
             ///     containing records for binary interactions.
-            /// search_option : str, optional, defaults to "Name"
-            ///     Identifier that is used to search substance if binary_records is
-            ///     passed as a list.
-            ///     One of 'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'
+            /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
+            ///     Identifier that is used to search binary records.
             #[staticmethod]
-            #[pyo3(text_signature = "(pure_records, binary_records, search_option='Name')")]
+            #[pyo3(text_signature = "(pure_records, binary_records, search_option)")]
             fn from_records(
                 pure_records: Vec<PyPureRecord>,
                 binary_records: &PyAny,
-                search_option: Option<&str>,
+                search_option: Option<IdentifierOption>,
             ) -> PyResult<Self> {
                 let prs = pure_records.into_iter().map(|pr| pr.0).collect();
                 let brs = if let Ok(br) = binary_records.extract::<PyReadonlyArray2<f64>>() {
                     Ok(br.to_owned_array().mapv(|r| r.try_into().unwrap()))
                 } else if let Ok(br) = binary_records.extract::<Vec<PyBinaryRecord>>() {
                     let brs: Vec<_> = br.into_iter().map(|br| br.0).collect();
-                    let io = match search_option {
-                        Some(o) => IdentifierOption::try_from(o)?,
-                        None => IdentifierOption::Name,
-                    };
-                    Ok(<$parameter>::binary_matrix_from_records(&prs, &brs, io))
+                    Ok(<$parameter>::binary_matrix_from_records(
+                        &prs,
+                        &brs,
+                        search_option.unwrap_or(IdentifierOption::Name),
+                    ))
                 } else {
                     Err(PyErr::new::<PyTypeError, _>(format!(
                         "Could not parse binary input!"
@@ -628,28 +626,21 @@ macro_rules! impl_parameter {
             ///     Path to file containing pure substance parameters.
             /// binary_path : str, optional
             ///     Path to file containing binary substance parameters.
-            /// search_option : str, optional, defaults to "Name"
+            /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
             ///     Identifier that is used to search substance.
-            ///     One of 'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'
             #[staticmethod]
-            #[pyo3(
-                text_signature = "(substances, pure_path, binary_path=None, search_option='Name')"
-            )]
+            #[pyo3(text_signature = "(substances, pure_path, binary_path, search_option)")]
             fn from_json(
                 substances: Vec<&str>,
                 pure_path: String,
                 binary_path: Option<String>,
-                search_option: Option<&str>,
+                search_option: Option<IdentifierOption>,
             ) -> Result<Self, ParameterError> {
-                let io = match search_option {
-                    Some(o) => IdentifierOption::try_from(o)?,
-                    None => IdentifierOption::Name,
-                };
                 Ok(Self(Rc::new(<$parameter>::from_json(
                     substances,
                     pure_path,
                     binary_path,
-                    io,
+                    search_option.unwrap_or(IdentifierOption::Name),
                 )?)))
             }
 
@@ -662,24 +653,19 @@ macro_rules! impl_parameter {
             ///     E.g. [(["methane", "propane"], "parameters/alkanes.json"), (["methanol"], "parameters/alcohols.json")]
             /// binary_path : str, optional
             ///     Path to file containing binary substance parameters.
-            /// search_option : str, optional, defaults to "Name"
+            /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
             ///     Identifier that is used to search substance.
-            ///     One of 'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'
             #[staticmethod]
             #[pyo3(text_signature = "(input, binary_path=None, search_option='Name')")]
             fn from_multiple_json(
                 input: Vec<(Vec<&str>, &str)>,
                 binary_path: Option<&str>,
-                search_option: Option<&str>,
+                search_option: Option<IdentifierOption>,
             ) -> Result<Self, ParameterError> {
-                let io = match search_option {
-                    Some(o) => IdentifierOption::try_from(o)?,
-                    None => IdentifierOption::Name,
-                };
                 Ok(Self(Rc::new(<$parameter>::from_multiple_json(
                     &input,
                     binary_path,
-                    io,
+                    search_option.unwrap_or(IdentifierOption::Name),
                 )?)))
             }
 
@@ -738,30 +724,25 @@ macro_rules! impl_parameter_from_segments {
             ///     Path to file containing segment parameters.
             /// binary_path : str, optional
             ///     Path to file containing binary segment-segment parameters.
-            /// search_option : str, optional, defaults to "Name"
+            /// search_option : IdentifierOption, optional, defaults to IdentifierOption.Name
             ///     Identifier that is used to search substance.
-            ///     One of 'Name', 'Cas', 'Inchi', 'IupacName', 'Formula', 'Smiles'
             #[staticmethod]
             #[pyo3(
-                text_signature = "(substances, pure_path, segments_path, binary_path=None, search_option='Name')"
+                text_signature = "(substances, pure_path, segments_path, binary_path, search_option)"
             )]
             fn from_json_segments(
                 substances: Vec<&str>,
                 pure_path: String,
                 segments_path: String,
                 binary_path: Option<String>,
-                search_option: Option<&str>,
+                search_option: Option<IdentifierOption>,
             ) -> Result<Self, ParameterError> {
-                let io = match search_option {
-                    Some(o) => IdentifierOption::try_from(o)?,
-                    None => IdentifierOption::Name,
-                };
                 Ok(Self(Rc::new(<$parameter>::from_json_segments(
                     &substances,
                     pure_path,
                     segments_path,
                     binary_path,
-                    io,
+                    search_option.unwrap_or(IdentifierOption::Name),
                 )?)))
             }
         }

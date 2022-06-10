@@ -1,11 +1,9 @@
-use super::ParameterError;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 
 /// Possible variants to identify a substance.
-#[repr(C)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum IdentifierOption {
     Cas,
     Name,
@@ -13,23 +11,6 @@ pub enum IdentifierOption {
     Smiles,
     Inchi,
     Formula,
-}
-
-impl TryFrom<&str> for IdentifierOption {
-    type Error = ParameterError;
-
-    fn try_from(s: &str) -> Result<Self, Self::Error> {
-        let lower = s.to_lowercase();
-        match lower.as_str() {
-            "cas" => Ok(Self::Cas),
-            "name" => Ok(Self::Name),
-            "iupacname" => Ok(Self::IupacName),
-            "smiles" => Ok(Self::Smiles),
-            "inchi" => Ok(Self::Inchi),
-            "formula" => Ok(Self::Formula),
-            _ => Err(ParameterError::IdentifierNotFound(s.to_owned())),
-        }
-    }
 }
 
 /// A collection of identifiers for a chemical structure or substance.
